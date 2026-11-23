@@ -24,12 +24,16 @@ import com.pingolin.keyboard.engine.KeyboardLayout
 import com.pingolin.keyboard.engine.ModifierKey
 import com.pingolin.keyboard.engine.initialLayoutId
 import java.util.Locale
+import kotlin.math.abs
+import kotlin.math.min
 
 /**
  * Draws a layout from the engine and turns touches into key actions. Keys act
  * when the finger lifts, with the point where it lifted (null for TalkBack and
  * key repeat); Delete and the arrows act at once and repeat while held. Delete
- * held down deletes whole words, faster and faster.
+ * held down deletes whole words, faster and faster. A long press on a key
+ * with alternates (accented letters, other quotes) shows them in a row over
+ * it: the finger slides to one and lifts to type it.
  * Ctrl, Alt and Select show whether they are on or locked. [onKeysPlaced]
  * gets the letter keys' centers and sizes whenever they move, for the touch
  * model.
@@ -93,6 +97,17 @@ class KeyboardView(
         performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
         onSpaceLongPress()
     }
+
+    /** A long press on a key with alternates: what they type, how they show, where, and the one picked. */
+    private var offerTexts: List<String> = emptyList()
+    private var offers: List<String> = emptyList()
+    private val offerRects = ArrayList<RectF>()
+    private val offerPanel = RectF()
+    private var offerIndex = 0
+    private val offerPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val offerEdge = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
+    private val offerPicked = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val offerHeld = Runnable { showOffers() }
     /** Delete held down deletes words; off where the field takes raw keys, as terminals do. */
     var holdDeletesWords = true
 
@@ -128,6 +143,12 @@ class KeyboardView(
         functionKeyPaint.color = theme.functionKey
         pressedPaint.color = theme.pressed
         lockPaint.color = theme.label
+        offerPaint.color = theme.functionKey
+        offerEdge.color = theme.label
+        offerEdge.alpha = 70
+        offerEdge.strokeWidth = density
+        offerPicked.color = theme.accent
+        offerPicked.alpha = 90
         val scale = heightPercent.coerceIn(KeyboardSettings.MIN_HEIGHT, KeyboardSettings.MAX_HEIGHT) / 100f
         rowHeight = ROW_DP * density * scale
         // Labels grow and shrink with the keys, within limits.
@@ -246,6 +267,17 @@ class KeyboardView(
                 canvas.drawText(label, rect.centerX(), baseline, labelPaint)
             }
         }
+        if (offers.isNotEmpty()) {
+            canvas.drawRoundRect(offerPanel, corner, corner, offerPaint)
+            canvas.drawRoundRect(offerPanel, corner, corner, offerEdge)
+            offerRects.forEachIndexed { i, r ->
+                if (i == offerIndex) {
+                    canvas.drawRoundRect(r.left + gap / 2, r.top + gap / 2, r.right - gap / 2, r.bottom - gap / 2, corner, corner, offerPicked)
+                }
+                val baseline = r.centerY() - (labelPaint.descent() + labelPaint.ascent()) / 2f
+                canvas.drawText(offers[i], r.centerX(), baseline, labelPaint)
+            }
+        }
         if (gliding && glidePoints.size > 1) {
             trail.rewind()
             trail.moveTo(glidePoints[0].x, glidePoints[0].y)
@@ -282,6 +314,10 @@ class KeyboardView(
             MotionEvent.ACTION_MOVE -> {
                 val index = event.findPointerIndex(pointerId)
                 if (index >= 0) touch.set(event.getX(index), event.getY(index))
+                if (offers.isNotEmpty()) {
+                    pickOffer(touch.x)
+                    return true
+                }
                 val from = glideFrom
                 if (index >= 0 && from != null) {
                     for (h in 0 until event.historySize) addGlidePoint(event.getHistoricalX(index, h), event.getHistoricalY(index, h))
@@ -290,6 +326,7 @@ class KeyboardView(
                         gliding = true
                         removeCallbacks(repeat)
                         removeCallbacks(spaceHeld)
+                        removeCallbacks(offerHeld)
                         pressed = -1
                     }
                     if (gliding) {
@@ -301,6 +338,7 @@ class KeyboardView(
                     val key = indexAt(touch.x, touch.y)
                     if (key != pressed) {
                         removeCallbacks(spaceHeld)
+                        removeCallbacks(offerHeld)
                         pressed = key
                         invalidate()
                     }
@@ -431,6 +469,50 @@ class KeyboardView(
         is KeyAction.SwitchLayout -> key.label
     }
 
+    /** The press stayed on a key with alternates: they show over it, the likeliest picked. */
+    private fun showOffers() {
+        val index = pressed
+        val key = keys.getOrNull(index) ?: return
+        if (gliding || key.alternates.isEmpty()) return
+        // From now on the finger picks an alternate: it starts no glide.
+        glideFrom = null
+        glidePoints.clear()
+        offerTexts = key.alternates
+        offers = key.alternates.map { if (shift == ShiftState.OFF) it else upperCase(it, locale) }
+        offerIndex = 0
+        placeOffers(cells[index])
+        performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+        invalidate()
+    }
+
+    /**
+     * One row of key-sized cells above the key, clipped to the view: the first
+     * right over the key, the others running toward the middle of the keyboard.
+     */
+    private fun placeOffers(cell: KeyRect) {
+        val n = offers.size
+        val w = min(cell.right - cell.left, width / n.toFloat())
+        val towardLeft = cell.centerX > width / 2f
+        val first = cell.centerX - w / 2
+        val left = (if (towardLeft) first - (n - 1) * w else first).coerceIn(0f, (width - n * w).coerceAtLeast(0f))
+        val top = (cell.top - rowHeight).coerceAtLeast(0f)
+        offerRects.clear()
+        for (i in 0 until n) {
+            val l = if (towardLeft) left + (n - 1 - i) * w else left + i * w
+            offerRects += RectF(l, top, l + w, top + rowHeight)
+        }
+        offerPanel.set(left, top, left + n * w, top + rowHeight)
+    }
+
+    /** The alternate nearest the finger, left to right. */
+    private fun pickOffer(x: Float) {
+        val nearest = offerRects.indices.minByOrNull { abs(offerRects[it].centerX() - x) } ?: return
+        if (nearest != offerIndex) {
+            offerIndex = nearest
+            invalidate()
+        }
+    }
+
     /** A key that types a letter, where a glide may start. */
     private fun isLetterKey(index: Int): Boolean {
         val action = keys.getOrNull(index)?.action as? KeyAction.Text ?: return false
@@ -446,6 +528,7 @@ class KeyboardView(
         if (index < 0) return
         performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
         if (isLanguageKey(index)) postDelayed(spaceHeld, LONG_PRESS_MS)
+        if (keys[index].alternates.isNotEmpty()) postDelayed(offerHeld, OFFER_PRESS_MS)
         val action = keys[index].action
         if (repeats(action)) {
             onKey(action, null)
@@ -459,10 +542,19 @@ class KeyboardView(
     private fun release(commit: Boolean) {
         removeCallbacks(repeat)
         removeCallbacks(spaceHeld)
+        removeCallbacks(offerHeld)
+        val offered = if (offers.isNotEmpty()) offerTexts.getOrNull(offerIndex) else null
+        offers = emptyList()
         val index = pressed
         pressed = -1
         pointerId = -1
         if (index < 0) return
+        if (offered != null) {
+            // Typed as if from the key itself, where the decoder expects its letter.
+            if (commit) onKey(KeyAction.Text(offered), PointF(cells[index].centerX, cells[index].centerY))
+            invalidate()
+            return
+        }
         val action = keys[index].action
         val held = longPressed && action == KeyAction.Space
         longPressed = false
@@ -479,5 +571,8 @@ class KeyboardView(
         const val ROW_DP = 54f
         const val DEFAULT_ROWS = 4
         const val LONG_PRESS_MS = 450L
+
+        /** How long a press stays on a key before its alternates show. */
+        const val OFFER_PRESS_MS = 350L
     }
 }

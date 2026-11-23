@@ -19,6 +19,8 @@ data class InputPolicy(
     val learn: Boolean,
     /** Punctuation that belongs right after a word: the space before it goes. */
     val attaching: String = ".,!?:;",
+    /** A space follows punctuation typed right after a word, and a picked word. */
+    val autoSpace: Boolean = false,
 ) {
     companion object {
         val PLAIN = InputPolicy(compose = false, autocorrect = false, personal = false, learn = false)
@@ -62,11 +64,11 @@ class InputLogic(
     /** The last autocorrection, until the next key. */
     private var undo: Undo? = null
 
-    /** A word was picked: the next word gets a space before it. */
-    private var phantomSpace = false
-
     /** The space just typed after a word: attaching punctuation replaces it. */
     private var weakSpace = false
+
+    /** That space came by itself (after punctuation or a picked word): a tap on Space adds no second one. */
+    private var autoSpaced = false
 
     private var cursor = UNKNOWN
     private var composeStart = UNKNOWN
@@ -116,7 +118,7 @@ class InputLogic(
         if (!policy.compose || points.size < 2) return@edit
         if (composing.isNotEmpty()) commitWord(" ", autocorrect = true)
         val before = field.textBeforeCursor(1)
-        if (phantomSpace || before?.lastOrNull()?.let(::isWordChar) == true) {
+        if (before?.lastOrNull()?.let(::isWordChar) == true) {
             field.commitText(" ")
             advance(1)
         }
@@ -200,7 +202,7 @@ class InputLogic(
             return@edit
         }
         if (composing.isEmpty()) {
-            if (!phantomSpace && field.textBeforeCursor(1)?.lastOrNull()?.let(::isWordChar) == true) {
+            if (field.textBeforeCursor(1)?.lastOrNull()?.let(::isWordChar) == true) {
                 // Right after a word, the word grows, so it is checked whole.
                 // Inside a word, or before the cursor is known, typed as it is.
                 resume()
@@ -228,10 +230,16 @@ class InputLogic(
             commitWord(" ", autocorrect = true)
             return@edit
         }
+        if (autoSpaced && field.textBeforeCursor(1) == " ") {
+            // The space is there already.
+            autoSpaced = false
+            showPredictions()
+            return@edit
+        }
         field.commitText(" ")
         advance(1)
-        weakSpace = phantomSpace
-        phantomSpace = false
+        weakSpace = false
+        autoSpaced = false
         undo = null
         showPredictions()
     }
@@ -239,20 +247,12 @@ class InputLogic(
     fun onBackspace() = edit { backspace() }
 
     private fun backspace() {
-        if (glided) {
-            // A glided word goes as a whole, as it came.
-            val start = composeStart
-            field.setComposingText("")
-            field.finishComposingText()
-            clearWord()
-            if (start != UNKNOWN) moveTo(start) else cursor = UNKNOWN
-            showPredictions()
-            return
-        }
         if (composing.isNotEmpty()) {
             val last = keys.removeAt(keys.lastIndex)
             composing.setLength(composing.length - last.text.length)
             resumed = false
+            // A glided word being corrected: the next letter continues it.
+            glided = false
             if (composing.isEmpty()) {
                 val start = composeStart
                 field.setComposingText("")
@@ -331,15 +331,19 @@ class InputLogic(
         val typed = composing.toString()
         val start = composeStart
         val wordContext = context
-        field.commitText(slot.text)
+        val space = spaceAfterPick()
+        field.commitText(slot.text + space)
         clearWord()
-        if (start != UNKNOWN) moveTo(start + slot.text.length) else cursor = UNKNOWN
+        if (start != UNKNOWN) moveTo(start + slot.text.length + space.length) else cursor = UNKNOWN
         if (slot.role == Slot.Role.TYPED) keep(typed) else learn(slot.text, wordContext)
         undo = null
-        weakSpace = false
-        phantomSpace = needsSpaceAfter()
+        weakSpace = space.isNotEmpty()
+        autoSpaced = space.isNotEmpty()
         showPredictions()
     }
+
+    /** A picked word gets a space after it, unless one follows already. */
+    private fun spaceAfterPick(): String = if (needsSpaceAfter()) " " else ""
 
     /**
      * Before Enter acts. A new line autocorrects like a space; a field action
@@ -347,6 +351,8 @@ class InputLogic(
      */
     fun onEnter(isAction: Boolean) = edit {
         if (composing.isNotEmpty()) commitWord("", autocorrect = !isAction)
+        // A line or a message does not end with a space that came by itself.
+        if (autoSpaced && field.textBeforeCursor(1) == " ") field.deleteBeforeCursor(1)
         resetSpaces()
         cursor = UNKNOWN
         onStrip(Strip.EMPTY)
@@ -413,10 +419,6 @@ class InputLogic(
     }
 
     private fun startWord(autoShifted: Boolean) {
-        if (phantomSpace) {
-            field.commitText(" ")
-            advance(1)
-        }
         resetSpaces()
         composeStart = cursor
         context = contextOf(field.textBeforeCursor(CONTEXT) ?: "")
@@ -453,22 +455,30 @@ class InputLogic(
             return
         }
         val attaches = text.length == 1 && policy.attaching.contains(text)
-        if (attaches && weakSpace && field.textBeforeCursor(1) == " ") {
+        // Punctuation that ends a word or follows punctuation that did gets a space after it.
+        val endsWord = attaches && weakSpace && field.textBeforeCursor(1) == " "
+        val spaced = text.length == 1 && text in AUTO_SPACE_AFTER && policy.autoSpace && (
+            endsWord || field.textBeforeCursor(1)?.lastOrNull()?.let { isWordChar(it) || it in AUTO_SPACE_AFTER } == true
+            )
+        val space = if (spaced && needsSpaceAfter()) " " else ""
+        if (endsWord) {
             field.beginBatchEdit()
             field.deleteBeforeCursor(1)
-            field.commitText(text)
+            field.commitText(text + space)
             field.endBatchEdit()
-            advance(text.length - 1)
+            advance(text.length + space.length - 1)
         } else {
-            if (phantomSpace && !attaches) {
-                field.commitText(" ")
-                advance(1)
-            }
-            field.commitText(text)
-            advance(text.length)
+            field.commitText(text + space)
+            advance(text.length + space.length)
         }
         resetSpaces()
-        onStrip(Strip.EMPTY)
+        if (space.isNotEmpty()) {
+            weakSpace = true
+            autoSpaced = true
+            showPredictions()
+        } else {
+            onStrip(Strip.EMPTY)
+        }
     }
 
     private fun commitWord(separator: String, autocorrect: Boolean) {
@@ -484,24 +494,27 @@ class InputLogic(
         // A word picked up again from the field was not typed now: not learned.
         val learnable = !resumed &&
             (corrected != null || result == null || result.typedIsWord || result.autocorrect == null)
-        field.commitText(word + separator)
+        // Punctuation right after a word gets a space after it.
+        val space = if (policy.autoSpace && separator.length == 1 && separator in AUTO_SPACE_AFTER && needsSpaceAfter()) " " else ""
+        field.commitText(word + separator + space)
         clearWord()
-        if (start != UNKNOWN) moveTo(start + word.length + separator.length) else cursor = UNKNOWN
-        undo = corrected?.let { Undo(typed, it, separator) }
+        if (start != UNKNOWN) moveTo(start + word.length + separator.length + space.length) else cursor = UNKNOWN
+        undo = corrected?.let { Undo(typed, it, separator + space) }
         if (learnable) learn(word, wordContext)
-        phantomSpace = false
-        weakSpace = separator == " "
-        if (separator == " ") showPredictions() else onStrip(Strip.EMPTY)
+        weakSpace = separator == " " || space.isNotEmpty()
+        autoSpaced = space.isNotEmpty()
+        if (separator == " " || space.isNotEmpty()) showPredictions() else onStrip(Strip.EMPTY)
     }
 
     private fun pickPrediction(word: String) {
         val wordContext = predictionContext
-        val text = if (phantomSpace) " $word" else word
+        val text = word + spaceAfterPick()
         field.commitText(text)
         advance(text.length)
         learn(word, wordContext)
         resetSpaces()
-        phantomSpace = needsSpaceAfter()
+        weakSpace = text.length > word.length
+        autoSpaced = weakSpace
         showPredictions()
     }
 
@@ -511,7 +524,7 @@ class InputLogic(
             return
         }
         val before = field.textBeforeCursor(CONTEXT) ?: ""
-        val wordContext = contextOf(if (phantomSpace) "$before " else before)
+        val wordContext = contextOf(before)
         // Only where a new word starts: after a space, or at a sentence start.
         if (!wordContext.sentenceStart && wordContext.previous == null) {
             onStrip(Strip.EMPTY)
@@ -557,8 +570,8 @@ class InputLogic(
 
     private fun resetSpaces() {
         undo = null
-        phantomSpace = false
         weakSpace = false
+        autoSpaced = false
     }
 
     private fun afterCompose() {
@@ -587,6 +600,9 @@ class InputLogic(
         private const val CONTEXT = 64
         /** The longest word that can be typed again. */
         private const val MAX_WORD = 32
+
+        /** Punctuation that gets a space after it, typed right after a word. */
+        const val AUTO_SPACE_AFTER = ".,!?:;"
 
         /** Characters read before the cursor for Delete held down; a longer word goes in parts. */
         private const val DELETE_LOOKBACK = 128

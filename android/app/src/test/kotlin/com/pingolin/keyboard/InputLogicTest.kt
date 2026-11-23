@@ -342,14 +342,25 @@ class InputLogicTest {
     }
 
     @Test
-    fun pickingAWordLeavesASpaceForTheNextOne() {
+    fun aPickedWordGetsASpaceAfterIt() {
         start()
         type("hel")
         assertEquals(Slot.Role.CURRENT, strip.middle?.role)
         pick(strip.slots.first { it?.text == "hello" })
-        assertEquals("hello", editor.toString())
+        assertEquals("hello ", editor.toString())
         type("a")
         assertEquals("hello a", editor.toString())
+    }
+
+    @Test
+    fun spaceRightAfterAPickedWordAddsNoSecondSpace() {
+        start()
+        type("hel")
+        pick(strip.slots.first { it?.text == "hello" })
+        type(" ")
+        assertEquals("hello ", editor.toString())
+        type(" ")
+        assertEquals("a second tap is a space", "hello  ", editor.toString())
     }
 
     @Test
@@ -368,7 +379,7 @@ class InputLogicTest {
         start()
         type("teh")
         pick(strip.left)
-        assertEquals("teh", editor.toString())
+        assertEquals("teh ", editor.toString())
         assertEquals(listOf("teh"), engine.kept)
     }
 
@@ -388,9 +399,9 @@ class InputLogicTest {
         assertEquals(listOf("you", "there", null), words())
         assertEquals(Slot.Role.PREDICTION, strip.middle?.role)
         pick(strip.middle)
-        assertEquals("hello there", editor.toString())
+        assertEquals("hello there ", editor.toString())
         assertEquals("there" to WordContext("hello", false), engine.learned.last())
-        // A picked prediction leaves a space for the next word, and predicts again.
+        // A picked prediction gets a space for the next word, and predicts again.
         type("x")
         assertEquals("hello there x", editor.toString())
     }
@@ -400,10 +411,10 @@ class InputLogicTest {
         start()
         type("how ")
         pick(strip.middle)
-        assertEquals("how are", editor.toString())
+        assertEquals("how are ", editor.toString())
         assertEquals("you", strip.middle?.text)
         pick(strip.middle)
-        assertEquals("how are you", editor.toString())
+        assertEquals("how are you ", editor.toString())
     }
 
     @Test
@@ -411,7 +422,7 @@ class InputLogicTest {
         start()
         assertEquals(listOf("The", "I", "How"), words())
         pick(strip.middle)
-        assertEquals("I", editor.toString())
+        assertEquals("I ", editor.toString())
         assertEquals("I" to WordContext(null, true), engine.learned.last())
     }
 
@@ -459,7 +470,7 @@ class InputLogicTest {
         assertFalse("a word typed again is not autocorrected", engine.lastAutocorrect!!)
         // A suggestion replaces it.
         pick(strip.slots.first { it?.text == "hello" })
-        assertEquals("hello", editor.toString())
+        assertEquals("hello ", editor.toString())
     }
 
     @Test
@@ -565,7 +576,7 @@ class InputLogicTest {
         type("how ")
         assertEquals(Slot("are", Slot.Role.PREDICTION), strip.middle)
         pick(strip.middle)
-        assertEquals("how are", editor.toString())
+        assertEquals("how are ", editor.toString())
         assertFalse("the picked word stays picked", logic.isComposing)
         type("x")
         assertEquals("how are x", editor.toString())
@@ -658,13 +669,16 @@ class InputLogicTest {
     }
 
     @Test
-    fun deleteTakesAGlidedWordAway() {
+    fun deleteTakesOneLetterOfAGlidedWord() {
         start(existing = "hi ")
         glide()
         assertEquals("hi hello", editor.toString())
         backspace()
-        assertEquals("hi ", editor.toString())
-        assertFalse(logic.isComposing)
+        assertEquals("hi hell", editor.toString())
+        assertTrue(logic.isComposing)
+        // The word is being corrected now: a letter continues it.
+        type("p")
+        assertEquals("hi hellp", editor.toString())
     }
 
     @Test
@@ -810,6 +824,62 @@ class InputLogicTest {
         assertEquals("❤️", takes("love ❤️")) // with a variation selector
         assertEquals("👨‍👩‍👧", takes("us 👨‍👩‍👧")) // joined
         assertEquals("😀😀", takes("ha😀😀"))
+    }
+
+    private val spaced = prose.copy(autoSpace = true)
+
+    @Test
+    fun punctuationAfterAWordGetsASpace() {
+        start(spaced)
+        type("hi,")
+        assertEquals("hi, ", editor.toString())
+        type("yes.")
+        assertEquals("hi, yes. ", editor.toString())
+        type(" ")
+        assertEquals("a tap on Space adds no second space", "hi, yes. ", editor.toString())
+        type("ok")
+        assertEquals("hi, yes. ok", editor.toString())
+    }
+
+    @Test
+    fun punctuationAfterASpaceAttachesAndGetsTheSpaceBack() {
+        start(spaced)
+        type("hi ,")
+        assertEquals("hi, ", editor.toString())
+        type("wait...")
+        assertEquals("hi, wait... ", editor.toString())
+    }
+
+    @Test
+    fun numbersAndSymbolsGetNoSpace() {
+        start(spaced)
+        type(":3.14 -")
+        assertEquals(":3.14 -", editor.toString())
+    }
+
+    @Test
+    fun withoutTheSettingPunctuationGetsNoSpace() {
+        start()
+        type("hi,")
+        assertEquals("hi,", editor.toString())
+    }
+
+    @Test
+    fun enterDropsASpaceThatCameByItself() {
+        start(spaced)
+        type("hi.")
+        logic.onEnter(isAction = false)
+        editor.deliver()
+        assertEquals("hi.", editor.toString())
+    }
+
+    @Test
+    fun undoingAnAutocorrectionKeepsTheSpace() {
+        start(spaced)
+        type("teh,")
+        assertEquals("the, ", editor.toString())
+        backspace()
+        assertEquals("teh, ", editor.toString())
     }
 
     @Test

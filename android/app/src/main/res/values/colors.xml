@@ -4,7 +4,8 @@
 <!-- Pingolin's accent color. -->
 <resources>
     <color name="accent">#6D4AFF</color>
-    <color name="ic_launcher_background">#6D4AFF</color>
+    <!-- The launcher icon: the purple of the Pingolin Note and Track icons. -->
+    <color name="ic_launcher_background">#452276</color>
     <color name="keyboard_background">#E9E8F0</color>
     <color name="key">#FFFFFF</color>
     <color name="key_function">#CDCBDA</color>

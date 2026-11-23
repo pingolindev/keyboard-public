@@ -1,0 +1,5 @@
+Tapping a suggested word adds a space after it.
+Commas, periods and other punctuation typed after a word get a space after them. Space after punctuation turns this off.
+Delete after a swiped word takes one letter, not the whole word.
+Holding a key shows its accented letters.
+The app icon has the purple of the other Pingolin apps.

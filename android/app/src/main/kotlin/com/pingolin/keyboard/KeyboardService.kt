@@ -29,7 +29,7 @@ import androidx.core.graphics.ColorUtils
 import com.pingolin.keyboard.engine.EditCommand
 import com.pingolin.keyboard.engine.KeyAction
 import com.pingolin.keyboard.engine.ModifierKey
-import com.pingolin.keyboard.engine.builtinLayout
+import com.pingolin.keyboard.engine.builtinLayoutFor
 import com.pingolin.keyboard.engine.initialLayoutId
 import com.pingolin.keyboard.engine.terminalRows
 import java.util.Locale
@@ -86,7 +86,7 @@ class KeyboardService : InputMethodService() {
     /** Colors, height and automatic incognito follow the setup screen at once (it runs in this process). */
     private val styleChanged = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         if (key == KeyboardSettings.THEME || key == KeyboardSettings.HEIGHT) applyStyle()
-        if (key == KeyboardSettings.AUTO_INCOGNITO) {
+        if (key == KeyboardSettings.AUTO_INCOGNITO || key == KeyboardSettings.AUTO_SPACE) {
             currentInputEditorInfo?.let { logic.updatePolicy(policyFor(it, isUnlocked())) }
             updateStrip()
         }
@@ -295,6 +295,7 @@ class KeyboardService : InputMethodService() {
         return InputPolicy(
             compose = compose,
             autocorrect = compose && settings.autocorrect && FieldPolicy.mayAutocorrect(info.inputType),
+            autoSpace = compose && settings.autoSpace && FieldPolicy.mayAutocorrect(info.inputType),
             personal = personal,
             learn = personal && settings.learnWords,
             attaching = if (locale().language == "fr") ".," else ".,!?:;",
@@ -446,12 +447,15 @@ class KeyboardService : InputMethodService() {
             is KeyAction.Text -> {
                 val text = if (shift.state == ShiftState.OFF) action.text else upperCase(action.text, locale())
                 val key = if (modifiers != 0) KeyCodes.of(text) else null
+                // The single shift ends before the edit: a field in this process
+                // reports its cursor during it, and after ". " that shifts again.
+                val autoShifted = shift.isAutomatic
+                shift.onTyped()
                 if (key != null) {
                     sendKey(key.first, modifiers or (if (key.second) KeyCodes.SHIFT else 0))
                 } else {
-                    logic.onText(text, touch?.x, touch?.y, autoShifted = shift.isAutomatic)
+                    logic.onText(text, touch?.x, touch?.y, autoShifted = autoShifted)
                 }
-                shift.onTyped()
             }
             KeyAction.Shift -> shift.onShiftTap(SystemClock.uptimeMillis())
             KeyAction.Backspace -> if (modifiers != 0) sendKey(KeyEvent.KEYCODE_DEL, modifiers) else logic.onBackspace()
@@ -472,8 +476,9 @@ class KeyboardService : InputMethodService() {
     private fun onGlide(points: List<GlidePoint>) {
         strip?.closeTools()
         autofill?.hide()
-        logic.onGlide(points, shift.state)
+        val state = shift.state
         shift.onTyped()
+        logic.onGlide(points, state)
         keyboard?.setShift(shift.state)
     }
 
@@ -584,7 +589,8 @@ class KeyboardService : InputMethodService() {
     private fun showLayout(id: String) {
         val language = active.firstOrNull()
         val resolved = if (id == LETTERS) language?.layout ?: LETTERS else id
-        val base = builtinLayout(resolved) ?: builtinLayout(LETTERS) ?: return
+        val tag = language?.tag.orEmpty()
+        val base = builtinLayoutFor(resolved, tag) ?: builtinLayoutFor(LETTERS, tag) ?: return
         layoutId = id
         if (selecting) {
             selecting = false

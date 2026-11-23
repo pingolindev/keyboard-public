@@ -15,6 +15,7 @@
     <string name="setup_try">Type here to try it</string>
     <string name="setting_suggestions">Show suggestions</string>
     <string name="setting_autocorrect">Autocorrect</string>
+    <string name="setting_auto_space">Space after punctuation</string>
     <string name="setting_glide">Glide typing</string>
 
     <string name="languages_title">Languages</string>

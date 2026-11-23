@@ -60,6 +60,12 @@
             android:minHeight="48dp"
             android:text="@string/setting_autocorrect" />
         <Switch
+            android:id="@+id/auto_space"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:text="@string/setting_auto_space" />
+        <Switch
             android:id="@+id/glide"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

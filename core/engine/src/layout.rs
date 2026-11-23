@@ -71,6 +71,9 @@ pub struct Key {
     pub action: KeyAction,
     /// Width relative to a letter key, which is 1.0.
     pub width: f32,
+    /// What a long press offers instead (accented letters, other quotes),
+    /// most likely first. Typed like `action`'s text.
+    pub alternates: Vec<String>,
 }
 
 /// A layout: rows of keys, top to bottom.
@@ -146,17 +149,117 @@ fn key(label: &str, action: KeyAction, width: f32) -> Key {
         label: label.to_owned(),
         action,
         width,
+        alternates: Vec::new(),
     }
+}
+
+/// A key that types `text`, with what a long press offers for it.
+fn text_key(text: &str, width: f32) -> Key {
+    let mut k = key(
+        text,
+        KeyAction::Text {
+            text: text.to_owned(),
+        },
+        width,
+    );
+    let mut chars = text.chars();
+    if let (Some(c), None) = (chars.next(), chars.next())
+        && let Some((_, more)) = ALTERNATES.iter().find(|(base, _)| *base == c)
+    {
+        k.alternates = more.chars().map(String::from).collect();
+    }
+    k
 }
 
 fn text_keys(chars: &str) -> Vec<Key> {
     chars
         .chars()
-        .map(|c| {
-            let text = c.to_string();
-            key(&text, KeyAction::Text { text: text.clone() }, 1.0)
-        })
+        .map(|c| text_key(&c.to_string(), 1.0))
         .collect()
+}
+
+/// What a long press on a key offers, by the key's own character, in the
+/// order most languages need them. [`builtin_layout_for`] moves a language's
+/// own letters first.
+const ALTERNATES: &[(char, &str)] = &[
+    ('a', "áàâäãåāąăæ"),
+    ('c', "çćč"),
+    ('d', "ďđð"),
+    ('e', "éèêëēėęě"),
+    ('g', "ğģ"),
+    ('i', "íìîïīįı"),
+    ('k', "ķ"),
+    ('l', "łļľ"),
+    ('n', "ñńňņ"),
+    ('o', "óòôöõøōőœ"),
+    ('r', "ř"),
+    ('s', "śšșşß"),
+    ('t', "ťțþ"),
+    ('u', "úùûüūůųű"),
+    ('y', "ýÿ"),
+    ('z', "źżž"),
+    // Greek: tonos and dialytika.
+    ('α', "ά"),
+    ('ε', "έ"),
+    ('η', "ή"),
+    ('ι', "ίϊΐ"),
+    ('ο', "ό"),
+    ('υ', "ύϋΰ"),
+    ('ω', "ώ"),
+    // Russian.
+    ('е', "ё"),
+    // Punctuation and currency.
+    ('?', "¿"),
+    ('!', "¡"),
+    ('"', "“”„«»"),
+    ('\'', "‘’‚‹›"),
+    ('-', "–—"),
+    ('.', "…"),
+    ('$', "€£¥¢"),
+];
+
+/// The letters each language writes that its layout has no key for, most
+/// needed first: a long press offers these before the others.
+const LANGUAGE_LETTERS: &[(&str, &str)] = &[
+    ("cs", "áčďéěíňóřšťúůýž"),
+    ("da", "é"),
+    ("de", "é"),
+    ("el", "άέήίόύώϊϋΐΰ"),
+    ("es", "áéíóúü"),
+    ("fi", "é"),
+    ("fr", "éèêëàâæçîïôœùûüÿ"),
+    ("hr", "čćđšž"),
+    ("it", "àèéìíîòóùú"),
+    ("lt", "ąčęėįšųūž"),
+    ("lv", "āčēģīķļņšūž"),
+    ("nb", "é"),
+    ("nl", "éëïóöü"),
+    ("pl", "ąćęłńóśźż"),
+    ("pt", "ãáâàçéêíõóôú"),
+    ("ro", "ăâîșț"),
+    ("ru", "ё"),
+    ("sl", "čšž"),
+    ("sv", "é"),
+    ("tr", "âîû"),
+];
+
+/// A built-in layout with the long-press offers ordered for `language` (a
+/// BCP 47 tag such as "pl" or "pt-BR"): its own letters first.
+#[uniffi::export]
+pub fn builtin_layout_for(id: String, language: String) -> Option<KeyboardLayout> {
+    let mut layout = builtin_layout(id)?;
+    let base = language.split('-').next().unwrap_or_default();
+    if let Some((_, letters)) = LANGUAGE_LETTERS.iter().find(|(tag, _)| *tag == base) {
+        let rank = |s: &String| {
+            let c = s.chars().next().unwrap_or_default();
+            letters.chars().position(|l| l == c).unwrap_or(usize::MAX)
+        };
+        for key in layout.rows.iter_mut().flatten() {
+            // A stable sort: the others keep their order after the language's own.
+            key.alternates.sort_by_key(rank);
+        }
+    }
+    Some(layout)
 }
 
 fn bottom_row(switch_label: &str, switch_to: &str) -> Vec<Key> {
@@ -165,12 +268,11 @@ fn bottom_row(switch_label: &str, switch_to: &str) -> Vec<Key> {
 
 /// The bottom row with other keys either side of Space.
 fn bottom_row_with(switch_label: &str, switch_to: &str, left: &str, right: &str) -> Vec<Key> {
-    let text = |t: &str| key(t, KeyAction::Text { text: t.to_owned() }, 1.0);
     vec![
         switch_key(switch_label, switch_to),
-        text(left),
+        text_key(left, 1.0),
         key("", KeyAction::Space, 5.0),
-        text(right),
+        text_key(right, 1.0),
         key("", KeyAction::Enter, 1.5),
     ]
 }
@@ -411,6 +513,57 @@ mod tests {
             widest(MORE_SYMBOLS) <= letters,
             "more symbols would shrink every key"
         );
+    }
+
+    #[test]
+    fn every_language_reaches_its_letters_by_a_long_press() {
+        for (tag, letters) in LANGUAGE_LETTERS {
+            for letter in letters.chars() {
+                let offered = ALTERNATES.iter().any(|(_, more)| more.contains(letter));
+                assert!(offered, "{tag}: no long press offers {letter}");
+            }
+        }
+        // Every key the offers hang on exists on some layout.
+        let all: Vec<String> = builtin_layout_ids()
+            .into_iter()
+            .flat_map(|id| texts(&id))
+            .collect();
+        for (base, _) in ALTERNATES {
+            assert!(all.contains(&base.to_string()), "no key types {base:?}");
+        }
+    }
+
+    #[test]
+    fn a_language_gets_its_own_letters_first() {
+        let offers = |language: &str, letter: &str| -> Vec<String> {
+            builtin_layout_for(LETTERS.to_owned(), language.to_owned())
+                .unwrap()
+                .rows
+                .iter()
+                .flatten()
+                .find(|k| k.label == letter)
+                .unwrap()
+                .alternates
+                .clone()
+        };
+        assert_eq!(offers("pl", "e")[0], "ę");
+        assert_eq!(offers("cs", "e")[..2], ["é", "ě"]);
+        assert_eq!(offers("ro", "a")[..2], ["ă", "â"]);
+        assert_eq!(offers("en-US", "e")[0], "é", "the general order elsewhere");
+        assert_eq!(
+            offers("pl", "e").len(),
+            offers("en-US", "e").len(),
+            "nothing is lost"
+        );
+        assert!(offers("pl", "q").is_empty());
+        let greek = builtin_layout_for("greek".to_owned(), "el".to_owned()).unwrap();
+        let alpha = greek
+            .rows
+            .iter()
+            .flatten()
+            .find(|k| k.label == "α")
+            .unwrap();
+        assert_eq!(alpha.alternates, ["ά"]);
     }
 
     #[test]
