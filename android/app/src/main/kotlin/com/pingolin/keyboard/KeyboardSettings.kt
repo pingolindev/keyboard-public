@@ -72,10 +72,17 @@ class KeyboardSettings(context: Context) {
         get() = prefs.getBoolean(KEEP_CLIPBOARD, false)
         set(value) = prefs.edit().putBoolean(KEEP_CLIPBOARD, value).apply()
 
-    /** The terminal rows (Esc, Tab, Ctrl, Alt, arrows) above every layout. */
-    var terminalKeys: Boolean
-        get() = prefs.getBoolean(TERMINAL_KEYS, false)
-        set(value) = prefs.edit().putBoolean(TERMINAL_KEYS, value).apply()
+    /** The terminal rows (Esc, Tab, Ctrl, Alt, arrows) above the keys in [app]: only where the user turned them on. */
+    fun terminalKeys(app: String?): Boolean = app != null && app in terminalApps()
+
+    fun setTerminalKeys(app: String, on: Boolean) {
+        val apps = terminalApps().toMutableSet()
+        if (on) apps += app else apps -= app
+        // Until 0.1.2 one switch showed the rows in every app.
+        prefs.edit().putStringSet(TERMINAL_APPS, apps).remove(OLD_TERMINAL_KEYS).apply()
+    }
+
+    private fun terminalApps(): Set<String> = prefs.getStringSet(TERMINAL_APPS, null).orEmpty()
 
     /** Accept language files that are not official ones. */
     var allowOtherLanguageFiles: Boolean
@@ -114,7 +121,8 @@ class KeyboardSettings(context: Context) {
         private const val LANGUAGE = "language"
         private const val ALLOW_OTHER = "allow_other_language_files"
         private const val INCOGNITO = "incognito"
-        private const val TERMINAL_KEYS = "terminal_keys"
+        private const val OLD_TERMINAL_KEYS = "terminal_keys"
+        private const val TERMINAL_APPS = "terminal_apps"
         private const val KEEP_CLIPBOARD = "keep_clipboard"
         private const val GLIDE = "glide_typing"
     }

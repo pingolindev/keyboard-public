@@ -282,7 +282,7 @@ class KeyboardService : InputMethodService() {
         settings.language = active.first().tag
         engine.configure(active.map { it.tag }, unlocked)
         currentInputEditorInfo?.let { logic.updatePolicy(policyFor(it, unlocked)) }
-        if (layoutId != SYMBOLS) showLayout(LETTERS)
+        if (layoutId != SYMBOLS && layoutId != MORE_SYMBOLS) showLayout(LETTERS)
     }
 
     /**
@@ -315,7 +315,9 @@ class KeyboardService : InputMethodService() {
                 showLayout(EDITING)
             }
             Tool.TERMINAL -> {
-                settings.terminalKeys = !settings.terminalKeys
+                currentInputEditorInfo?.packageName?.let { app ->
+                    settings.setTerminalKeys(app, !settings.terminalKeys(app))
+                }
                 hideVoice()
                 hideClipboard()
                 showLayout(layoutId)
@@ -430,7 +432,7 @@ class KeyboardService : InputMethodService() {
         strip?.setChecked(
             buildSet {
                 if (settings.incognito) add(Tool.INCOGNITO)
-                if (settings.terminalKeys) add(Tool.TERMINAL)
+                if (settings.terminalKeys(currentInputEditorInfo?.packageName)) add(Tool.TERMINAL)
             },
         )
     }
@@ -575,8 +577,9 @@ class KeyboardService : InputMethodService() {
 
     /**
      * Shows a layout; "letters" means the current language's letters. The
-     * terminal rows go on top when the user turned them on, or when the field
-     * takes raw keys, as terminals do.
+     * terminal rows go on top only in apps where the user turned them on: a
+     * field that takes raw keys is not enough (a search box on amazon.com said
+     * it did).
      */
     private fun showLayout(id: String) {
         val language = active.firstOrNull()
@@ -589,7 +592,8 @@ class KeyboardService : InputMethodService() {
         }
         val rawKeys = currentInputEditorInfo?.let { FieldPolicy.takesRawKeys(it.inputType) } ?: false
         keyboard?.holdDeletesWords = !rawKeys
-        val layout = if (id != EDITING && (settings.terminalKeys || rawKeys)) base.copy(rows = terminalRows() + base.rows) else base
+        val terminal = id != EDITING && settings.terminalKeys(currentInputEditorInfo?.packageName)
+        val layout = if (terminal) base.copy(rows = terminalRows() + base.rows) else base
         val label = if (active.size > 1) language?.name.orEmpty() else ""
         keyboard?.show(layout, shift.state, locale(), label)
         showKeyStates()
@@ -630,6 +634,7 @@ class KeyboardService : InputMethodService() {
         const val CHIP_DP = 36
         const val LETTERS = "letters"
         const val SYMBOLS = "symbols"
+        const val MORE_SYMBOLS = "more-symbols"
         const val EDITING = "editing"
     }
 }

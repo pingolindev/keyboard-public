@@ -32,10 +32,15 @@ class ShiftControllerTest {
     }
 
     @Test
-    fun aSlowSecondTapTurnsShiftOff() {
+    fun tapsCycleThroughOneCapitalCapsLockAndOffAtAnyPace() {
         shift.onShiftTap(now = 0)
-        shift.onShiftTap(now = 1_000)
+        assertEquals(ONCE, shift.state)
+        shift.onShiftTap(now = 5_000)
+        assertEquals(LOCKED, shift.state)
+        shift.onShiftTap(now = 10_000)
         assertEquals(OFF, shift.state)
+        shift.onShiftTap(now = 15_000)
+        assertEquals(ONCE, shift.state)
     }
 
     @Test
@@ -51,6 +56,24 @@ class ShiftControllerTest {
         shift.onAutoCaps(capitalNext = true)
         shift.onShiftTap(now = 0)
         assertEquals(OFF, shift.state)
+    }
+
+    @Test
+    fun aQuickDoubleTapAtASentenceStartLocksCaps() {
+        shift.onAutoCaps(capitalNext = true)
+        shift.onShiftTap(now = 0)
+        shift.onShiftTap(now = 200)
+        assertEquals(LOCKED, shift.state)
+    }
+
+    @Test
+    fun aSlowTapAfterCancellingAnAutomaticCapitalShiftsOnce() {
+        shift.onAutoCaps(capitalNext = true)
+        shift.onShiftTap(now = 0)
+        shift.onShiftTap(now = 2_000)
+        assertEquals(ONCE, shift.state)
+        shift.onShiftTap(now = 4_000)
+        assertEquals(LOCKED, shift.state)
     }
 
     @Test

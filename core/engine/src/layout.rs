@@ -3,7 +3,7 @@
 
 //! Keyboard layouts.
 //!
-//! Built in: symbols, and letters for each language a dictionary names in its
+//! Built in: two pages of symbols, and letters for each language a dictionary names in its
 //! `layout` metadata. "letters" is QWERTY; the others are the national
 //! layouts phones use, with the letters a language needs on their own keys.
 //! Accented letters without a key are typed as their base letter: the decoder
@@ -82,6 +82,7 @@ pub struct KeyboardLayout {
 
 const LETTERS: &str = "letters";
 const SYMBOLS: &str = "symbols";
+const MORE_SYMBOLS: &str = "more-symbols";
 const EDITING: &str = "editing";
 
 /// Letter layouts: their rows of letter keys, top to bottom. The bottom row
@@ -108,7 +109,11 @@ pub fn builtin_layout_ids() -> Vec<String> {
     LETTER_LAYOUTS
         .iter()
         .map(|(id, _)| (*id).to_owned())
-        .chain([SYMBOLS.to_owned(), EDITING.to_owned()])
+        .chain([
+            SYMBOLS.to_owned(),
+            MORE_SYMBOLS.to_owned(),
+            EDITING.to_owned(),
+        ])
         .collect()
 }
 
@@ -117,6 +122,9 @@ pub fn builtin_layout_ids() -> Vec<String> {
 pub fn builtin_layout(id: String) -> Option<KeyboardLayout> {
     if id == SYMBOLS {
         return Some(symbols());
+    }
+    if id == MORE_SYMBOLS {
+        return Some(more_symbols());
     }
     if id == EDITING {
         return Some(editing());
@@ -152,26 +160,17 @@ fn text_keys(chars: &str) -> Vec<Key> {
 }
 
 fn bottom_row(switch_label: &str, switch_to: &str) -> Vec<Key> {
-    let switch = KeyAction::SwitchLayout {
-        layout_id: switch_to.to_owned(),
-    };
+    bottom_row_with(switch_label, switch_to, ",", ".")
+}
+
+/// The bottom row with other keys either side of Space.
+fn bottom_row_with(switch_label: &str, switch_to: &str, left: &str, right: &str) -> Vec<Key> {
+    let text = |t: &str| key(t, KeyAction::Text { text: t.to_owned() }, 1.0);
     vec![
-        key(switch_label, switch, 1.5),
-        key(
-            ",",
-            KeyAction::Text {
-                text: ",".to_owned(),
-            },
-            1.0,
-        ),
+        switch_key(switch_label, switch_to),
+        text(left),
         key("", KeyAction::Space, 5.0),
-        key(
-            ".",
-            KeyAction::Text {
-                text: ".".to_owned(),
-            },
-            1.0,
-        ),
+        text(right),
         key("", KeyAction::Enter, 1.5),
     ]
 }
@@ -263,16 +262,44 @@ pub fn terminal_rows() -> Vec<Vec<Key>> {
     ]
 }
 
+fn switch_key(label: &str, to: &str) -> Key {
+    key(
+        label,
+        KeyAction::SwitchLayout {
+            layout_id: to.to_owned(),
+        },
+        1.5,
+    )
+}
+
+/// Digits and the common symbols, laid out as most Android keyboards do.
 fn symbols() -> KeyboardLayout {
-    let mut third = text_keys("*\"':;!?/");
+    let mut third = vec![switch_key("=\\<", MORE_SYMBOLS)];
+    third.extend(text_keys("*\"':;!?"));
     third.push(key("", KeyAction::Backspace, 1.5));
     KeyboardLayout {
         id: SYMBOLS.to_owned(),
         rows: vec![
             text_keys("1234567890"),
-            text_keys("@#$%&-+()"),
+            text_keys("@#$_&-+()/"),
             third,
             bottom_row("ABC", LETTERS),
+        ],
+    }
+}
+
+/// The second page: the rest of ASCII, currencies and a few signs.
+fn more_symbols() -> KeyboardLayout {
+    let mut third = vec![switch_key("?123", SYMBOLS)];
+    third.extend(text_keys("\\%©®™[]"));
+    third.push(key("", KeyAction::Backspace, 1.5));
+    KeyboardLayout {
+        id: MORE_SYMBOLS.to_owned(),
+        rows: vec![
+            text_keys("~`|•√π÷×§∆"),
+            text_keys("£¢€¥^°={}"),
+            third,
+            bottom_row_with("ABC", LETTERS, "<", ">"),
         ],
     }
 }
@@ -317,6 +344,73 @@ mod tests {
         found.sort();
         let expected: Vec<String> = ('a'..='z').map(|c| c.to_string()).collect();
         assert_eq!(found, expected);
+    }
+
+    fn texts(id: &str) -> Vec<String> {
+        builtin_layout(id.to_owned())
+            .unwrap()
+            .rows
+            .iter()
+            .flatten()
+            .filter_map(|k| match &k.action {
+                KeyAction::Text { text } => Some(text.clone()),
+                _ => None,
+            })
+            .collect()
+    }
+
+    fn row_width(row: &[Key]) -> f32 {
+        row.iter().map(|k| k.width).sum()
+    }
+
+    #[test]
+    fn every_printable_ascii_character_can_be_typed() {
+        let typeable: Vec<String> = [LETTERS, SYMBOLS, MORE_SYMBOLS]
+            .iter()
+            .flat_map(|id| texts(id))
+            .collect();
+        for c in '!'..='~' {
+            // Capitals are the letters with Shift.
+            let wanted = c.to_ascii_lowercase().to_string();
+            assert!(typeable.contains(&wanted), "nothing types {c:?}");
+        }
+    }
+
+    #[test]
+    fn the_symbol_pages_lead_to_each_other_and_back_to_letters() {
+        let targets = |id: &str| -> Vec<String> {
+            builtin_layout(id.to_owned())
+                .unwrap()
+                .rows
+                .iter()
+                .flatten()
+                .filter_map(|k| match &k.action {
+                    KeyAction::SwitchLayout { layout_id } => Some(layout_id.clone()),
+                    _ => None,
+                })
+                .collect()
+        };
+        assert_eq!(targets(SYMBOLS), [MORE_SYMBOLS, LETTERS]);
+        assert_eq!(targets(MORE_SYMBOLS), [SYMBOLS, LETTERS]);
+        assert!(targets(LETTERS).contains(&SYMBOLS.to_owned()));
+    }
+
+    #[test]
+    fn symbol_rows_are_no_wider_than_the_letters() {
+        let widest = |id: &str| {
+            builtin_layout(id.to_owned())
+                .unwrap()
+                .rows
+                .iter()
+                .map(|r| row_width(r))
+                .fold(0.0, f32::max)
+        };
+        let letters = widest(LETTERS);
+        assert!(widest(SYMBOLS) <= letters, "symbols would shrink every key");
+        assert!(
+            widest(MORE_SYMBOLS) <= letters,
+            "more symbols would shrink every key"
+        );
     }
 
     #[test]

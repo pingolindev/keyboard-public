@@ -1,0 +1,3 @@
+Shift moves from one capital to caps lock to off with each tap.
+A second page of symbols has { } [ ] < > = \ and more.
+Terminal keys show only after you turn them on, and only in that app.

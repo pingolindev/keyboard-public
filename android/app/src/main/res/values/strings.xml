@@ -134,4 +134,5 @@
     <string name="label_alt">Alt</string>
     <string name="key_letters">Letters</string>
     <string name="key_symbols">Symbols</string>
+    <string name="key_more_symbols">More symbols</string>
 </resources>

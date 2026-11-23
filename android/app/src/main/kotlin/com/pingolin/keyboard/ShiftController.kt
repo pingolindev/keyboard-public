@@ -6,9 +6,10 @@ package com.pingolin.keyboard
 enum class ShiftState { OFF, ONCE, LOCKED }
 
 /**
- * Shift: a tap shifts the next letter, a second tap soon after locks caps, a tap
- * while locked turns it off. Typing a letter ends a single shift. Automatic
- * capitals at the start of a sentence set a single shift that a tap cancels.
+ * Shift: each tap moves on, from off to the next letter only, to caps lock, to
+ * off. Typing a letter ends a single shift. Automatic capitals at the start of
+ * a sentence set a single shift that a tap cancels; a quick second tap then
+ * locks caps, as a double tap does anywhere.
  */
 class ShiftController(private val doubleTapMillis: Long = 350) {
     var state = ShiftState.OFF
@@ -20,13 +21,18 @@ class ShiftController(private val doubleTapMillis: Long = 350) {
     val isAutomatic: Boolean get() = automatic && state == ShiftState.ONCE
     private var lastTapAt: Long? = null
 
+    /** The last tap cancelled an automatic capital. */
+    private var cancelledAutomatic = false
+
     fun onShiftTap(now: Long) {
         val quickSecondTap = lastTapAt?.let { now - it <= doubleTapMillis } ?: false
+        val cancels = state == ShiftState.ONCE && automatic
         state = when (state) {
-            ShiftState.OFF -> ShiftState.ONCE
-            ShiftState.ONCE -> if (!automatic && quickSecondTap) ShiftState.LOCKED else ShiftState.OFF
+            ShiftState.OFF -> if (quickSecondTap && cancelledAutomatic) ShiftState.LOCKED else ShiftState.ONCE
+            ShiftState.ONCE -> if (automatic) ShiftState.OFF else ShiftState.LOCKED
             ShiftState.LOCKED -> ShiftState.OFF
         }
+        cancelledAutomatic = cancels
         automatic = false
         lastTapAt = now
     }
@@ -57,5 +63,6 @@ class ShiftController(private val doubleTapMillis: Long = 350) {
         state = ShiftState.OFF
         automatic = false
         lastTapAt = null
+        cancelledAutomatic = false
     }
 }

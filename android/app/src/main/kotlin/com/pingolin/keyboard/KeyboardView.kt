@@ -369,7 +369,11 @@ class KeyboardView(
                 context.getString(R.string.key_space_language, spaceLabel)
             }
             is KeyAction.SwitchLayout -> context.getString(
-                if (action.layoutId == initialLayoutId(false)) R.string.key_letters else R.string.key_symbols,
+                when (action.layoutId) {
+                    initialLayoutId(false) -> R.string.key_letters
+                    initialLayoutId(true) -> R.string.key_symbols
+                    else -> R.string.key_more_symbols
+                },
             )
             is KeyAction.Edit -> withState(context.getString(editName(action.command)), action)
             is KeyAction.Modifier -> withState(
