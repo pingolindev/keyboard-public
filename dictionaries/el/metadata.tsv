@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: The Android Open Source Project
+# SPDX-License-Identifier: Apache-2.0
+#
+# Ελληνικά, imported from AOSP LatinIME (el_wordlist.combined) with
+# `dictc import-aosp`. See README.md.
+locale	el
+name	Ελληνικά
+layout	greek
+source	AOSP LatinIME el_wordlist.combined, version 44
+license	Apache-2.0

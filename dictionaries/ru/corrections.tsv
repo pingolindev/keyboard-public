@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: The Android Open Source Project
+# SPDX-License-Identifier: Apache-2.0
+#
+# Русский, imported from AOSP LatinIME (ru_wordlist.combined) with
+# `dictc import-aosp`. See README.md.
+#
+# typed<TAB>replacement
+впросак	в просак
+втечение	в течение
+втечении	в течении
+чтоли	что ли
+чтоль	что ли
+ща	сейчас
+щас	сейчас

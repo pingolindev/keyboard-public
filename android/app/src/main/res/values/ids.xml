@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: 2026 Pingolin LLC -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<resources>
+    <!-- The TalkBack action on Space that switches to the next language. -->
+    <item name="action_next_language" type="id" />
+</resources>

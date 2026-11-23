@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: 2026 Pingolin LLC -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<resources>
+    <style name="Theme.PingolinKeyboard" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:colorPrimary">@color/accent</item>
+        <item name="android:colorAccent">@color/accent</item>
+    </style>
+
+    <!-- A file opened from the browser is being added. -->
+    <style name="Theme.PingolinKeyboard.Adding" parent="android:Theme.Material.Light.Dialog.NoActionBar" />
+</resources>

@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: The Android Open Source Project
+# SPDX-License-Identifier: Apache-2.0
+#
+# Dansk, imported from AOSP LatinIME (da_wordlist.combined) with
+# `dictc import-aosp`. See README.md.
+locale	da
+name	Dansk
+layout	qwerty-da
+source	AOSP LatinIME da_wordlist.combined, version 44
+license	Apache-2.0

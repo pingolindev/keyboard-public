@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: 2026 Pingolin LLC
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+
+[package]
+name = "pingolin-keyboard-engine"
+description = "Text input engine of Pingolin Keyboard: layouts, dictionaries, suggestions, autocorrect, prediction and learning"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lib]
+name = "pingolin_keyboard_engine"
+crate-type = ["cdylib", "lib"]
+
+[features]
+# Offline voice typing: compiles whisper.cpp (vendored in whisper/, MIT).
+voice = []
+
+[dependencies]
+uniffi = { workspace = true }
+unicode-normalization = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[build-dependencies]
+cc = { version = "1", features = ["parallel"] }
+
+[[example]]
+name = "transcribe"
+required-features = ["voice"]

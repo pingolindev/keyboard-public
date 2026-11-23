@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: The Android Open Source Project
+# SPDX-License-Identifier: Apache-2.0
+#
+# Lietuvių, imported from AOSP LatinIME (lt_wordlist.combined) with
+# `dictc import-aosp`. See README.md.
+locale	lt
+name	Lietuvių
+layout	letters
+source	AOSP LatinIME lt_wordlist.combined, version 44
+license	Apache-2.0

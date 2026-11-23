@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: 2026 Pingolin LLC -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Pingolin's accent color. -->
+<resources>
+    <color name="accent">#6D4AFF</color>
+    <color name="ic_launcher_background">#6D4AFF</color>
+    <color name="keyboard_background">#E9E8F0</color>
+    <color name="key">#FFFFFF</color>
+    <color name="key_function">#CDCBDA</color>
+    <color name="key_pressed">#B9AEFF</color>
+    <color name="key_label">#1A1040</color>
+    <color name="strip_incognito">#D6CEFF</color>
+</resources>

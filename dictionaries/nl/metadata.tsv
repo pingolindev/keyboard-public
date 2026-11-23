@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: The Android Open Source Project
+# SPDX-License-Identifier: Apache-2.0
+#
+# Nederlands, imported from AOSP LatinIME (nl_wordlist.combined) with
+# `dictc import-aosp`. See README.md.
+locale	nl
+name	Nederlands
+layout	letters
+source	AOSP LatinIME nl_wordlist.combined, version 54
+license	Apache-2.0

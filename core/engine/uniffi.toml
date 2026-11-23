@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Pingolin LLC
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+
+[bindings.kotlin]
+package_name = "com.pingolin.keyboard.engine"
+cdylib_name = "pingolin_keyboard_engine"

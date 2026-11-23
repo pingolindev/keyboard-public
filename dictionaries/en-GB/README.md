@@ -1,0 +1,34 @@
+<!-- SPDX-FileCopyrightText: 2026 Pingolin LLC -->
+<!-- SPDX-License-Identifier: Apache-2.0 OR MIT -->
+
+# English (UK) (`en-GB`)
+
+Layout: `letters`. 157,360 words, 51 fixed corrections, 134,836 word pairs.
+
+## Sources
+
+- Words: AOSP LatinIME `dictionaries/en_GB_wordlist.combined.gz` (word list version 54),
+  Apache-2.0, converted to `words.tsv`, `corrections.tsv` and `metadata.tsv`.
+  https://android.googlesource.com/platform/packages/inputmethods/LatinIME/+/refs/heads/main/dictionaries/en_GB_wordlist.combined.gz
+  (sha256 `2d8555b0f1e256be9953a4575595f2fc76d559bffdf3fa4c9bd7f263185d9b58`, fetched 2026-11-21)
+- Word pairs: counted in the `eng` sentences of Tatoeba (https://tatoeba.org),
+  by the Tatoeba contributors, CC BY 2.0 FR (`LICENSES/LicenseRef-CC-BY-2.0-FR.txt`).
+  https://downloads.tatoeba.org/exports/per_language/eng/eng_sentences.tsv.bz2
+  (sha256 `0c4d3b18152bd6507bbf77ab690532b25de1e60da950f68705b3c88935c01fb4`, fetched 2026-11-22)
+
+`corrections.tsv` keeps only the AOSP corrections of misspelled words and
+contractions.
+
+The pairs leave out sentences whose number is divisible by 100 (they test
+predictions) and sentences naming Tom or Mary, Tatoeba's stock names.
+
+## Regenerating
+
+```sh
+zcat en_GB_wordlist.combined.gz > en_GB_wordlist.combined
+bunzip2 -k eng_sentences.tsv.bz2
+cd core
+cargo run --release -p pingolin-keyboard-dictc -- import-aosp en_GB_wordlist.combined ../dictionaries/en-GB
+cargo run --release -p pingolin-keyboard-dictc -- import-pairs eng_sentences.tsv ../dictionaries/en-GB \
+    --exclude "Tom,Mary,Tom's,Mary's,Том,Мэри,Мери,Τομ,Μαίρη,תום,מרי"
+```

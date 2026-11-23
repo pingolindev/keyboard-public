@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: The Android Open Source Project
+# SPDX-License-Identifier: Apache-2.0
+#
+# Deutsch, imported from AOSP LatinIME (de_wordlist.combined) with
+# `dictc import-aosp`. See README.md.
+locale	de
+name	Deutsch
+layout	qwertz-de
+source	AOSP LatinIME de_wordlist.combined, version 54
+license	Apache-2.0

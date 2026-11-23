@@ -1,0 +1,16 @@
+# Gradle and Android
+android/.gradle/
+android/.kotlin/
+android/build/
+android/app/build/
+android/buildSrc/.gradle/
+android/buildSrc/.kotlin/
+android/buildSrc/build/
+android/local.properties
+*.iml
+.idea/
+
+# Rust
+core/target/
+
+.DS_Store

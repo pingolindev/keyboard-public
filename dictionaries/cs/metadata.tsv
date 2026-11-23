@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: The Android Open Source Project
+# SPDX-License-Identifier: Apache-2.0
+#
+# Čeština, imported from AOSP LatinIME (cs_wordlist.combined) with
+# `dictc import-aosp`. See README.md.
+locale	cs
+name	Čeština
+layout	qwertz
+source	AOSP LatinIME cs_wordlist.combined, version 44
+license	Apache-2.0

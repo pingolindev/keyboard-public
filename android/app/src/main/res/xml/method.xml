@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: 2026 Pingolin LLC -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- supportsInlineSuggestions: password managers' suggestions in the strip (Android 11+). -->
+<input-method xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:settingsActivity="com.pingolin.keyboard.SetupActivity"
+    android:supportsInlineSuggestions="true"
+    android:supportsSwitchingToNextInputMethod="true"
+    tools:targetApi="r">
+    <subtype
+        android:imeSubtypeLocale="en_US"
+        android:imeSubtypeMode="keyboard"
+        android:isAsciiCapable="true"
+        android:label="@string/subtype_en_us"
+        android:languageTag="en-US" />
+</input-method>

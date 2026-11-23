@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: 2026 Pingolin LLC
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+
+[package]
+name = "pingolin-keyboard-dictc"
+description = "Builds Pingolin Keyboard dictionaries from word lists"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "dictc"
+path = "src/main.rs"
+
+[dependencies]
+pingolin-keyboard-engine = { path = "../engine" }

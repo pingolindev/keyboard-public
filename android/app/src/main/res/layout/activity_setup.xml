@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: 2026 Pingolin LLC -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/app_name"
+            android:textAppearance="?android:attr/textAppearanceLarge" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/setup_intro"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+        <TextView
+            android:id="@+id/status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+        <Button
+            android:id="@+id/enable"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/setup_enable" />
+
+        <Button
+            android:id="@+id/select"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/setup_select" />
+
+        <Switch
+            android:id="@+id/suggestions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:minHeight="48dp"
+            android:text="@string/setting_suggestions" />
+        <Switch
+            android:id="@+id/autocorrect"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:text="@string/setting_autocorrect" />
+        <Switch
+            android:id="@+id/glide"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:text="@string/setting_glide" />
+        <EditText
+            android:id="@+id/try_it"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:hint="@string/setup_try"
+            android:importantForAutofill="no"
+            android:inputType="textCapSentences|textMultiLine" />
+
+        <TextView
+            android:id="@+id/appearance_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:text="@string/appearance_title"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+        <Button
+            android:id="@+id/theme"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+        <TextView
+            android:id="@+id/height_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:labelFor="@id/height"
+            android:text="@string/height_title" />
+        <SeekBar
+            android:id="@+id/height"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp" />
+
+        <TextView
+            android:id="@+id/languages_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:text="@string/languages_title"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+        <LinearLayout
+            android:id="@+id/languages"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+        <Button
+            android:id="@+id/languages_get"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/languages_get" />
+        <Button
+            android:id="@+id/languages_open"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/languages_open" />
+        <Switch
+            android:id="@+id/languages_other"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:text="@string/languages_other" />
+
+        <TextView
+            android:id="@+id/voice_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:text="@string/voice_title"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+        <TextView
+            android:id="@+id/voice_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/voice_none" />
+        <Button
+            android:id="@+id/voice_get"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/voice_get" />
+        <Button
+            android:id="@+id/voice_open"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/voice_open" />
+        <Button
+            android:id="@+id/voice_remove"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/voice_remove" />
+
+        <TextView
+            android:id="@+id/clipboard_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:text="@string/clipboard_title"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+        <Switch
+            android:id="@+id/keep_clipboard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:text="@string/setting_keep_clipboard" />
+        <Button
+            android:id="@+id/forget_clipboard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/clipboard_forget" />
+
+        <TextView
+            android:id="@+id/learning_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:text="@string/learning_title"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+        <Switch
+            android:id="@+id/learn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:text="@string/setting_learn" />
+        <Button
+            android:id="@+id/forget"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/learned_forget" />
+        <Button
+            android:id="@+id/export"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/export" />
+        <Button
+            android:id="@+id/import_file"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/import_file" />
+    </LinearLayout>
+</ScrollView>

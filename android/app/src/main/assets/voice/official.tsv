@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2026 Pingolin LLC
+# SPDX-License-Identifier: GPL-3.0-or-later
+# The voice models the keyboard accepts: whisper models in ggml form from
+# https://huggingface.co/ggerganov/whisper.cpp (MIT).
+# file	sha256	bytes	languages	name
+ggml-tiny.en-q5_1.bin	c77c5766f1cef09b6b7d47f21b546cbddd4157886b3b5d6d4f709e91e66c7c2b	32166155	en	English, fast (32 MB)
+ggml-base.en-q5_1.bin	4baf70dd0d7c4247ba2b81fafd9c01005ac77c2f9ef064e00dcf195d0e2fdd2f	59721011	en	English, more accurate (60 MB)
+ggml-tiny-q5_1.bin	818710568da3ca15689e31a743197b520007872ff9576237bda97bd1b469c3d7	32152673	all	All languages, fast (32 MB)
+ggml-base-q5_1.bin	422f1ae452ade6f30a004d7e5c6a43195e4433bc370bf23fac9cc591f01a8898	59707625	all	All languages, more accurate (60 MB)
+ggml-small-q5_1.bin	ae85e4a935d7a567bd102fe55afc16bb595bdb618e11b2fc7591bc08120411bb	190085487	all	All languages, most accurate (190 MB)

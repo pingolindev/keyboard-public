@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2026 Pingolin LLC
+# SPDX-License-Identifier: Apache-2.0 OR MIT
+
+# Android 15 and later need native libraries aligned to 16 KB pages.
+[target.aarch64-linux-android]
+rustflags = ["-Clink-arg=-Wl,-z,max-page-size=16384"]
+
+[target.armv7-linux-androideabi]
+rustflags = ["-Clink-arg=-Wl,-z,max-page-size=16384"]
+
+[target.x86_64-linux-android]
+rustflags = ["-Clink-arg=-Wl,-z,max-page-size=16384"]

@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: 2026 Pingolin LLC -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<resources>
+    <string name="app_name">Pingolin Keyboard</string>
+    <string name="ime_name">Pingolin Keyboard</string>
+    <string name="subtype_en_us">English (US)</string>
+
+    <string name="setup_intro">Pingolin Keyboard has no internet access.</string>
+    <string name="setup_enable">Turn on Pingolin Keyboard</string>
+    <string name="setup_select">Switch to Pingolin Keyboard</string>
+    <string name="setup_status_off">Pingolin Keyboard is off.</string>
+    <string name="setup_status_on">Pingolin Keyboard is on but not in use.</string>
+    <string name="setup_status_ready">Pingolin Keyboard is your keyboard.</string>
+    <string name="setup_try">Type here to try it</string>
+    <string name="setting_suggestions">Show suggestions</string>
+    <string name="setting_autocorrect">Autocorrect</string>
+    <string name="setting_glide">Glide typing</string>
+
+    <string name="languages_title">Languages</string>
+    <string name="languages_get">Get language files</string>
+    <string name="languages_open">Open a language file</string>
+    <string name="languages_other">Allow other language files</string>
+    <string name="languages_remove">Remove</string>
+    <string name="languages_added">%1$s added.</string>
+    <string name="languages_not_official">This is not an official language file.</string>
+    <string name="languages_invalid">This is not a language file.</string>
+    <string name="languages_last">Keep at least one language.</string>
+
+    <string name="appearance_title">Appearance</string>
+    <string name="theme_title">Colors</string>
+    <string name="theme_button">Colors: %1$s</string>
+    <string name="theme_system">Same as the phone</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_black">Black</string>
+    <string name="theme_dynamic">Wallpaper colors</string>
+    <string name="height_title">Keyboard height</string>
+    <string name="height_label">Keyboard height: %1$d%%</string>
+
+    <string name="voice_title">Voice typing</string>
+    <string name="voice_get">Get a voice model</string>
+    <string name="voice_open">Open a voice model</string>
+    <string name="voice_remove">Remove the voice model</string>
+    <string name="voice_installed">Voice model: %1$s</string>
+    <string name="voice_none">No voice model.</string>
+    <string name="voice_added">%1$s added.</string>
+    <string name="voice_not_official">This is not an official voice model.</string>
+
+    <string name="clipboard_title">Clipboard</string>
+    <string name="setting_keep_clipboard">Keep clipboard history</string>
+    <string name="clipboard_forget">Forget clipboard history</string>
+    <string name="clipboard_forget_confirm">Forget every clip, pinned ones too?</string>
+    <string name="clipboard_forgotten">Clipboard history forgotten.</string>
+    <string name="export_clips">Pinned clips</string>
+
+    <string name="learning_title">Learning</string>
+    <string name="setting_learn">Learn new words</string>
+    <string name="learned_forget">Forget learned words</string>
+    <string name="learned_forget_confirm">Forget every word learned on this phone?</string>
+    <string name="learned_forgotten">Learned words forgotten.</string>
+    <string name="export">Export</string>
+    <string name="import_file">Import</string>
+    <string name="export_settings">Settings</string>
+    <string name="export_words">Learned words</string>
+    <string name="export_done">Exported.</string>
+    <string name="import_done">Imported.</string>
+    <string name="import_invalid">This is not a Pingolin Keyboard export.</string>
+    <string name="file_unreadable">The file could not be read.</string>
+    <string name="file_unsaved">The file could not be saved.</string>
+    <string name="file_not_keyboard">This is not a language file or a voice model.</string>
+    <string name="open_file_label">Add to Pingolin Keyboard</string>
+    <string name="open_file_adding">Adding</string>
+
+    <!-- What TalkBack reads for keys that show a symbol. -->
+    <string name="key_shift">Shift</string>
+    <string name="key_caps_lock">Caps lock</string>
+    <string name="key_delete">Delete</string>
+    <string name="key_enter">Enter</string>
+    <string name="key_space">Space</string>
+    <string name="key_space_language">Space, %1$s</string>
+    <string name="action_next_language">Next language</string>
+    <string name="tools">Tools</string>
+    <string name="tools_incognito">Tools. Incognito is on.</string>
+    <string name="tools_close">Close tools</string>
+    <string name="tool_incognito">Incognito</string>
+    <string name="tool_settings">Settings</string>
+    <string name="tool_text_editing">Text editing</string>
+    <string name="tool_terminal">Terminal keys</string>
+    <string name="tool_clipboard">Clipboard</string>
+    <string name="tool_voice">Voice typing</string>
+    <string name="voice_listening">Listening</string>
+    <string name="voice_writing">Writing</string>
+    <string name="voice_nothing">Nothing heard.</string>
+    <string name="voice_failed">That did not work.</string>
+    <string name="voice_no_model">No voice model yet.</string>
+    <string name="voice_no_mic">Voice typing needs the microphone.</string>
+    <string name="voice_locked">Unlock the phone first.</string>
+    <string name="voice_stop">Stop</string>
+    <string name="voice_again">Try again</string>
+    <string name="voice_set_up">Set up</string>
+    <string name="voice_allow">Allow microphone</string>
+    <string name="clipboard_empty">Copied text shows here.</string>
+    <string name="clipboard_clear">Clear</string>
+    <string name="clipboard_pin">Pin</string>
+    <string name="clipboard_unpin">Unpin</string>
+    <string name="clipboard_delete">Delete</string>
+    <string name="key_left">Left</string>
+    <string name="key_right">Right</string>
+    <string name="key_up">Up</string>
+    <string name="key_down">Down</string>
+    <string name="key_home">Home</string>
+    <string name="key_end">End</string>
+    <string name="key_page_up">Page up</string>
+    <string name="key_page_down">Page down</string>
+    <string name="key_forward_delete">Delete forward</string>
+    <string name="key_escape">Escape</string>
+    <string name="key_tab">Tab</string>
+    <string name="key_select">Select</string>
+    <string name="key_select_all">Select all</string>
+    <string name="key_cut">Cut</string>
+    <string name="key_copy">Copy</string>
+    <string name="key_paste">Paste</string>
+    <string name="key_ctrl">Control</string>
+    <string name="key_alt">Alt</string>
+    <string name="key_state_on">%1$s, on</string>
+    <string name="key_state_locked">%1$s, locked</string>
+    <string name="label_page_up">PgUp</string>
+    <string name="label_page_down">PgDn</string>
+    <string name="label_escape">Esc</string>
+    <string name="label_ctrl">Ctrl</string>
+    <string name="label_alt">Alt</string>
+    <string name="key_letters">Letters</string>
+    <string name="key_symbols">Symbols</string>
+</resources>
