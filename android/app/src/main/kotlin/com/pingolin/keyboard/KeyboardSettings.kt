@@ -44,6 +44,11 @@ class KeyboardSettings(context: Context) {
         get() = prefs.getString(LANGUAGE, null)?.takeIf { Languages.isTag(it) } ?: languages.first()
         set(value) = prefs.edit().putString(LANGUAGE, value).apply()
 
+    /** An app that asks for it (a private tab) turns on incognito there. */
+    var autoIncognito: Boolean
+        get() = prefs.getBoolean(AUTO_INCOGNITO, true)
+        set(value) = prefs.edit().putBoolean(AUTO_INCOGNITO, value).apply()
+
     /** Incognito, switched on in the keyboard: nothing learned, learned words not used. */
     var incognito: Boolean
         get() = prefs.getBoolean(INCOGNITO, false)
@@ -82,7 +87,7 @@ class KeyboardSettings(context: Context) {
         prefs.registerOnSharedPreferenceChangeListener(listener)
 
     /** What an export holds of these settings. */
-    fun snapshot() = SettingsSnapshot(suggestions, autocorrect, learnWords, languages, language, theme, heightPercent)
+    fun snapshot() = SettingsSnapshot(suggestions, autocorrect, learnWords, languages, language, theme, heightPercent, autoIncognito)
 
     fun restore(s: SettingsSnapshot) {
         suggestions = s.suggestions
@@ -92,6 +97,7 @@ class KeyboardSettings(context: Context) {
         if (Languages.isTag(s.language)) language = s.language
         theme = s.theme
         heightPercent = s.heightPercent
+        autoIncognito = s.autoIncognito
     }
 
     companion object {
@@ -99,6 +105,7 @@ class KeyboardSettings(context: Context) {
         const val MAX_HEIGHT = 130
         const val THEME = "theme"
         const val HEIGHT = "height_percent"
+        const val AUTO_INCOGNITO = "auto_incognito"
         private const val FILE = "settings"
         private const val SUGGESTIONS = "suggestions"
         private const val AUTOCORRECT = "autocorrect"
@@ -121,4 +128,5 @@ data class SettingsSnapshot(
     val language: String,
     val theme: String = KeyboardTheme.SYSTEM,
     val heightPercent: Int = 100,
+    val autoIncognito: Boolean = true,
 )

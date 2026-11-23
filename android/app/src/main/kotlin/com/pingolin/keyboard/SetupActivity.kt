@@ -8,11 +8,16 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.DocumentsContract
 import android.provider.Settings
+import android.text.SpannableStringBuilder
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
+import android.text.style.RelativeSizeSpan
 import android.view.Gravity
 import android.view.View
 import android.view.inputmethod.InputMethodManager
@@ -93,6 +98,10 @@ class SetupActivity : Activity() {
         val learn = findViewById<Switch>(R.id.learn)
         learn.isChecked = settings.learnWords
         learn.setOnCheckedChangeListener { _, on -> settings.learnWords = on }
+        val autoIncognito = findViewById<Switch>(R.id.auto_incognito)
+        autoIncognito.text = withHint(getString(R.string.setting_auto_incognito), getString(R.string.setting_auto_incognito_hint))
+        autoIncognito.isChecked = settings.autoIncognito
+        autoIncognito.setOnCheckedChangeListener { _, on -> settings.autoIncognito = on }
         findViewById<Button>(R.id.forget).setOnClickListener { confirmForget() }
         findViewById<Button>(R.id.export).setOnClickListener { chooseExport() }
         findViewById<Button>(R.id.import_file).setOnClickListener { pick(REQUEST_IMPORT) }
@@ -115,6 +124,19 @@ class SetupActivity : Activity() {
         super.onNewIntent(intent)
         setIntent(intent)
         askForMicrophone(intent, openedForIt = false)
+    }
+
+    /** A switch's label with a hint under it, smaller and lighter. TalkBack reads both. */
+    private fun withHint(label: String, hint: String): CharSequence {
+        val attrs = obtainStyledAttributes(intArrayOf(android.R.attr.textColorSecondary))
+        val color = attrs.getColor(0, Color.GRAY)
+        attrs.recycle()
+        return SpannableStringBuilder(label).append('\n').apply {
+            val start = length
+            append(hint)
+            setSpan(RelativeSizeSpan(HINT_SIZE), start, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            setSpan(ForegroundColorSpan(color), start, length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        }
     }
 
     /** Closes after the answer when this screen was opened only to ask. */
@@ -502,6 +524,7 @@ class SetupActivity : Activity() {
         /** Set by the keyboard: ask for the microphone at once. */
         const val EXTRA_ASK_MIC = "com.pingolin.keyboard.ASK_MIC"
         private const val HEIGHT_STEP = 5
+        private const val HINT_SIZE = 0.85f
         private const val REQUEST_LANGUAGE = 1
         private const val REQUEST_EXPORT = 2
         private const val REQUEST_IMPORT = 3

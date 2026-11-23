@@ -753,6 +753,65 @@ class InputLogicTest {
         assertEquals("hey", editor.toString())
     }
 
+    private fun deleteWord() {
+        logic.onDeleteWord()
+        editor.deliver()
+    }
+
+    @Test
+    fun heldDeleteTakesTheWordBeingTypedThenWholeWords() {
+        start(existing = "one two ")
+        type("thr")
+        backspace()
+        assertEquals("one two th", editor.toString())
+        deleteWord()
+        assertEquals("one two ", editor.toString())
+        assertFalse(logic.isComposing)
+        deleteWord()
+        assertEquals("one ", editor.toString())
+        deleteWord()
+        assertEquals("", editor.toString())
+        deleteWord()
+        assertEquals("", editor.toString())
+        type("x")
+        assertEquals("x", editor.toString())
+    }
+
+    @Test
+    fun heldDeleteAfterAnAutocorrection() {
+        start()
+        type("so teh ")
+        assertEquals("so the ", editor.toString())
+        deleteWord()
+        assertEquals("so ", editor.toString())
+        type("it")
+        assertEquals("so it", editor.toString())
+    }
+
+    @Test
+    fun wordsHeldDeleteTakes() {
+        fun takes(before: String) = before.substring(before.length - InputLogic.lastWordLength(before))
+        assertEquals("", takes(""))
+        assertEquals("world", takes("hello world"))
+        assertEquals("world  ", takes("hello world  "))
+        assertEquals("\n", takes("hello\n"))
+        assertEquals("  ", takes("hello\n  "))
+        assertEquals("don't ", takes("I don't "))
+        assertEquals("e-mail", takes("an e-mail"))
+        assertEquals("-", takes("an e-"))
+        assertEquals("abc123", takes("x abc123"))
+        assertEquals("snake_case", takes("a snake_case"))
+        assertEquals("!!! ", takes("wow!!! "))
+        assertEquals("café", takes("un café"))
+        assertEquals("cafe\u0301", takes("un cafe\u0301")) // e with a combining accent
+        assertEquals("क्या", takes("यह क्या")) // a virama inside the word
+        assertEquals("😀", takes("hi 😀"))
+        assertEquals("👍🏽", takes("ok 👍🏽")) // with a skin tone
+        assertEquals("❤️", takes("love ❤️")) // with a variation selector
+        assertEquals("👨‍👩‍👧", takes("us 👨‍👩‍👧")) // joined
+        assertEquals("😀😀", takes("ha😀😀"))
+    }
+
     @Test
     fun contextOfText() {
         assertEquals(WordContext(null, true), InputLogic.contextOf(""))

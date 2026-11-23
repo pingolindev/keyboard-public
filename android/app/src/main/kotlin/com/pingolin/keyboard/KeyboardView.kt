@@ -28,7 +28,8 @@ import java.util.Locale
 /**
  * Draws a layout from the engine and turns touches into key actions. Keys act
  * when the finger lifts, with the point where it lifted (null for TalkBack and
- * key repeat); Delete and the arrows act at once and repeat while held.
+ * key repeat); Delete and the arrows act at once and repeat while held. Delete
+ * held down deletes whole words, faster and faster.
  * Ctrl, Alt and Select show whether they are on or locked. [onKeysPlaced]
  * gets the letter keys' centers and sizes whenever they move, for the touch
  * model.
@@ -42,6 +43,8 @@ class KeyboardView(
     private val onSpaceLongPress: () -> Unit,
     /** A glide: the finger slid from a letter over the keys (glide typing). */
     private val onGlide: (List<GlidePoint>) -> Unit,
+    /** Delete held down: the next word goes. */
+    private val onDeleteWord: () -> Unit,
 ) : View(context) {
     private val density = resources.displayMetrics.density
     private var rowHeight = ROW_DP * density
@@ -90,11 +93,22 @@ class KeyboardView(
         performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
         onSpaceLongPress()
     }
+    /** Delete held down deletes words; off where the field takes raw keys, as terminals do. */
+    var holdDeletesWords = true
+
     private var repeating: KeyAction? = null
+    private var repeated = 0
     private val repeat = object : Runnable {
         override fun run() {
-            repeating?.let { onKey(it, null) }
-            postDelayed(this, REPEAT_INTERVAL_MS)
+            val action = repeating ?: return
+            if (action == KeyAction.Backspace && holdDeletesWords) {
+                performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                onDeleteWord()
+                postDelayed(this, KeyRepeat.wordInterval(repeated++))
+            } else {
+                onKey(action, null)
+                postDelayed(this, KeyRepeat.INTERVAL_MS)
+            }
         }
     }
 
@@ -432,7 +446,8 @@ class KeyboardView(
         if (repeats(action)) {
             onKey(action, null)
             repeating = action
-            postDelayed(repeat, REPEAT_DELAY_MS)
+            repeated = 0
+            postDelayed(repeat, KeyRepeat.DELAY_MS)
         }
         invalidate()
     }
@@ -459,8 +474,6 @@ class KeyboardView(
         /** A row's height at 100%. */
         const val ROW_DP = 54f
         const val DEFAULT_ROWS = 4
-        const val REPEAT_DELAY_MS = 400L
-        const val REPEAT_INTERVAL_MS = 50L
         const val LONG_PRESS_MS = 450L
     }
 }

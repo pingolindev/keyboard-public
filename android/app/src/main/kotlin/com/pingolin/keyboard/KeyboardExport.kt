@@ -15,7 +15,7 @@ import org.json.JSONObject
  * {"format": "pingolin-keyboard-export", "version": 1,
  *  "settings": {"suggestions": true, "autocorrect": true, "learn_words": true,
  *               "languages": ["en-US", "de"], "language": "en-US",
- *               "theme": "system", "height": 100},
+ *               "theme": "system", "height": 100, "auto_incognito": true},
  *  "words": {"format": "pingolin-keyboard-words", "version": 1, "words": [], "pairs": []},
  *  "clipboard": {"format": "pingolin-keyboard-clipboard", "version": 1, "clips": []}}
  * ```
@@ -45,7 +45,8 @@ object KeyboardExport {
                     .put("languages", JSONArray(s.languages))
                     .put("language", s.language)
                     .put("theme", s.theme)
-                    .put("height", s.heightPercent),
+                    .put("height", s.heightPercent)
+                    .put("auto_incognito", s.autoIncognito),
             )
         }
         contents.wordsJson?.let { root.put("words", JSONObject(it)) }
@@ -71,6 +72,7 @@ object KeyboardExport {
                     language = s.optString("language").takeIf(Languages::isTag) ?: languages.firstOrNull() ?: "",
                     theme = s.optString("theme").takeIf(KeyboardTheme::isId) ?: KeyboardTheme.SYSTEM,
                     heightPercent = s.optInt("height", 100).coerceIn(KeyboardSettings.MIN_HEIGHT, KeyboardSettings.MAX_HEIGHT),
+                    autoIncognito = s.optBoolean("auto_incognito", true),
                 )
             }
             val words = root.optJSONObject("words")?.toString()

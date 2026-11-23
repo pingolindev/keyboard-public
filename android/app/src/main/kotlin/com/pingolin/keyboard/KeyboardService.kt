@@ -83,9 +83,13 @@ class KeyboardService : InputMethodService() {
     /** The languages usable in this field, the current one first. */
     private var active: List<Language> = emptyList()
 
-    /** Colors and height follow the setup screen at once (it runs in this process). */
+    /** Colors, height and automatic incognito follow the setup screen at once (it runs in this process). */
     private val styleChanged = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         if (key == KeyboardSettings.THEME || key == KeyboardSettings.HEIGHT) applyStyle()
+        if (key == KeyboardSettings.AUTO_INCOGNITO) {
+            currentInputEditorInfo?.let { logic.updatePolicy(policyFor(it, isUnlocked())) }
+            updateStrip()
+        }
     }
 
     override fun onCreate() {
@@ -108,7 +112,7 @@ class KeyboardService : InputMethodService() {
     }
 
     override fun onCreateInputView(): View {
-        val keys = KeyboardView(this, ::onKey, engine::setKeys, ::nextLanguage, ::onGlide)
+        val keys = KeyboardView(this, ::onKey, engine::setKeys, ::nextLanguage, ::onGlide, ::deleteWord)
         val suggestions = SuggestionStripView(this, logic::onPick, ::onTool)
         val passwords = AutofillBar(this)
         // A password manager's chips cover the words, not the tools button.
@@ -131,7 +135,8 @@ class KeyboardService : InputMethodService() {
             addView(speech)
         }
         container.setOnApplyWindowInsetsListener { v, insets ->
-            v.setPadding(0, 0, 0, navigationBarBottom(insets))
+            val edges = keyEdges(insets)
+            v.setPadding(edges[0], 0, edges[1], edges[2])
             insets
         }
         keyboard = keys
@@ -157,13 +162,18 @@ class KeyboardService : InputMethodService() {
 
     /**
      * Up to Android 14 the system draws the navigation bar under the
-     * keyboard in the window's color; later the keyboard draws behind it.
+     * keyboard in the window's color. Later the keyboard draws behind it, so
+     * the bar gets no gray layer of its own. Either way its buttons contrast
+     * with [color].
      */
     private fun colorNavigationBar(color: Int) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) return
         val w = window?.window ?: return
-        @Suppress("DEPRECATION") // only used before Android 15
-        w.navigationBarColor = color
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            w.isNavigationBarContrastEnforced = false
+        } else {
+            @Suppress("DEPRECATION") // only used before Android 15
+            w.navigationBarColor = color
+        }
         val light = ColorUtils.calculateLuminance(color) > 0.5
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val flag = WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
@@ -281,7 +291,7 @@ class KeyboardService : InputMethodService() {
      */
     private fun policyFor(info: EditorInfo, unlocked: Boolean): InputPolicy {
         val compose = settings.suggestions && FieldPolicy.mayCompose(info.inputType)
-        val personal = unlocked && !settings.incognito && FieldPolicy.mayLearn(info.inputType, info.imeOptions)
+        val personal = unlocked && !settings.incognito && FieldPolicy.mayLearn(info.inputType, info.imeOptions, settings.autoIncognito)
         return InputPolicy(
             compose = compose,
             autocorrect = compose && settings.autocorrect && FieldPolicy.mayAutocorrect(info.inputType),
@@ -331,7 +341,7 @@ class KeyboardService : InputMethodService() {
     private fun recordClip() {
         if (settings.incognito) return
         val info = currentInputEditorInfo
-        if (info != null && (FieldPolicy.asksIncognito(info.imeOptions) || FieldPolicy.isPassword(info.inputType))) return
+        if (info != null && (appIncognito(info) || FieldPolicy.isPassword(info.inputType))) return
         val clip = getSystemService(ClipboardManager::class.java)?.primaryClip ?: return
         if (clip.description?.extras?.getBoolean(EXTRA_IS_SENSITIVE, false) == true) return
         val text = clip.takeIf { it.itemCount > 0 }?.getItemAt(0)?.text?.toString() ?: return
@@ -410,10 +420,13 @@ class KeyboardService : InputMethodService() {
         hideClipboard()
     }
 
+    /** The app asks for incognito here, and the user lets it. */
+    private fun appIncognito(info: EditorInfo?): Boolean =
+        info != null && settings.autoIncognito && FieldPolicy.asksIncognito(info.imeOptions)
+
     /** The strip's incognito mark and switched-on tools. */
     private fun updateStrip() {
-        val asks = currentInputEditorInfo?.let { FieldPolicy.asksIncognito(it.imeOptions) } ?: false
-        strip?.setIncognito(settings.incognito || asks)
+        strip?.setIncognito(settings.incognito || appIncognito(currentInputEditorInfo))
         strip?.setChecked(
             buildSet {
                 if (settings.incognito) add(Tool.INCOGNITO)
@@ -470,6 +483,16 @@ class KeyboardService : InputMethodService() {
             connection.performEditorAction(editorAction)
         } else {
             sendDownUpKeyEvents(KeyEvent.KEYCODE_ENTER)
+        }
+    }
+
+    /** Delete held down, a word at a time. With Ctrl or Alt on, the field gets the key instead. */
+    private fun deleteWord() {
+        if (ctrl.isOn || alt.isOn) {
+            onKey(KeyAction.Backspace, null)
+        } else {
+            strip?.closeTools()
+            logic.onDeleteWord()
         }
     }
 
@@ -565,6 +588,7 @@ class KeyboardService : InputMethodService() {
             currentInputConnection?.clearMetaKeyStates(KeyEvent.META_SHIFT_ON)
         }
         val rawKeys = currentInputEditorInfo?.let { FieldPolicy.takesRawKeys(it.inputType) } ?: false
+        keyboard?.holdDeletesWords = !rawKeys
         val layout = if (id != EDITING && (settings.terminalKeys || rawKeys)) base.copy(rows = terminalRows() + base.rows) else base
         val label = if (active.size > 1) language?.name.orEmpty() else ""
         keyboard?.show(layout, shift.state, locale(), label)
@@ -578,12 +602,23 @@ class KeyboardService : InputMethodService() {
         keyboard?.setShift(shift.state)
     }
 
-    private fun navigationBarBottom(insets: WindowInsets): Int =
+    /**
+     * Left, right and bottom space the keys keep clear. From Android 15 the
+     * keyboard draws behind the navigation bar. With gesture navigation the bar
+     * under a keyboard holds the hide and switch-keyboard buttons, which are
+     * taller than the bar's own inset: tappableElement, not navigationBars
+     * (24 dp against 48 dp on Android 16). The sides cover a bar or a camera
+     * cutout in landscape.
+     */
+    private fun keyEdges(insets: WindowInsets): IntArray =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            insets.getInsets(WindowInsets.Type.navigationBars()).bottom
+            val types = WindowInsets.Type.navigationBars() or WindowInsets.Type.tappableElement() or
+                WindowInsets.Type.displayCutout()
+            val edges = insets.getInsets(types)
+            intArrayOf(edges.left, edges.right, edges.bottom)
         } else {
             @Suppress("DEPRECATION")
-            insets.systemWindowInsetBottom
+            intArrayOf(insets.systemWindowInsetLeft, insets.systemWindowInsetRight, insets.systemWindowInsetBottom)
         }
 
     private companion object {

@@ -26,8 +26,13 @@ object FieldPolicy {
     /** The app asks for incognito here (a private browser tab, for one). */
     fun asksIncognito(imeOptions: Int): Boolean = (imeOptions and EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING) != 0
 
-    /** Whether the keyboard may learn from what is typed here, and use what it learned. */
-    fun mayLearn(inputType: Int, imeOptions: Int): Boolean = !isPassword(inputType) && !asksIncognito(imeOptions)
+    /**
+     * Whether the keyboard may learn from what is typed here, and use what it
+     * learned. Never in passwords; not where the app asks for incognito, unless
+     * the user turned off [autoIncognito].
+     */
+    fun mayLearn(inputType: Int, imeOptions: Int, autoIncognito: Boolean = true): Boolean =
+        !isPassword(inputType) && !(autoIncognito && asksIncognito(imeOptions))
 
     /** Whether suggestions may be shown here. */
     fun maySuggest(inputType: Int): Boolean =

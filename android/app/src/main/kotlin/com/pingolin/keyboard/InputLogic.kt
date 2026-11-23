@@ -296,6 +296,32 @@ class InputLogic(
         if (cursor > 0) moveTo(cursor - 1) else cursor = UNKNOWN
     }
 
+    /** Delete held down: the word before the cursor goes as a whole, then the one before it. */
+    fun onDeleteWord() = edit { deleteWord() }
+
+    private fun deleteWord() {
+        undo = null
+        resetSpaces()
+        onStrip(Strip.EMPTY)
+        if (composing.isNotEmpty()) {
+            val start = composeStart
+            field.setComposingText("")
+            field.finishComposingText()
+            clearWord()
+            if (start != UNKNOWN) moveTo(start) else cursor = UNKNOWN
+            return
+        }
+        val count = field.textBeforeCursor(DELETE_LOOKBACK)?.let(::lastWordLength) ?: 0
+        if (count == 0) {
+            // Nothing to read (an empty field, or one that hides its text): one Delete.
+            field.sendBackspace()
+            if (cursor > 0) moveTo(cursor - 1) else cursor = UNKNOWN
+            return
+        }
+        field.deleteBeforeCursor(count)
+        if (cursor != UNKNOWN && cursor >= count) moveTo(cursor - count) else cursor = UNKNOWN
+    }
+
     /** A word from the strip was tapped. */
     fun onPick(slot: Slot) = edit {
         if (composing.isEmpty()) {
@@ -562,6 +588,9 @@ class InputLogic(
         /** The longest word that can be typed again. */
         private const val MAX_WORD = 32
 
+        /** Characters read before the cursor for Delete held down; a longer word goes in parts. */
+        private const val DELETE_LOOKBACK = 128
+
         fun isWordChar(c: Char): Boolean = Character.isLetter(c) || when (Character.getType(c).toByte()) {
             Character.NON_SPACING_MARK, Character.COMBINING_SPACING_MARK, Character.ENCLOSING_MARK -> true
             else -> false
@@ -592,6 +621,62 @@ class InputLogic(
                 }
             }
             return text.substring(i)
+        }
+
+        /**
+         * How many characters (UTF-16 units) Delete held down takes from the end
+         * of [before]: a line break alone; else the spaces there, then the word
+         * before them (letters and digits with their marks, apostrophes and
+         * hyphens inside it) or a run of other symbols, an emoji whole.
+         */
+        fun lastWordLength(before: String): Int {
+            val end = before.length
+            if (end == 0) return 0
+            if (before[end - 1] == '\n') return 1
+            var i = end
+            while (i > 0 && (before[i - 1] == ' ' || before[i - 1] == '\t')) i--
+            if (i == 0 || before[i - 1] == '\n') return end - i
+            val inWord = isWordBase(before.codePointAt(clusterStart(before, i)))
+            var taken = false
+            while (i > 0) {
+                val start = clusterStart(before, i)
+                val base = before.codePointAt(start)
+                val keep = if (inWord) {
+                    isWordBase(base) || (
+                        taken && isConnector(base) && start > 0 &&
+                            isWordBase(before.codePointAt(clusterStart(before, start)))
+                        )
+                } else {
+                    base != ' '.code && base != '\t'.code && base != '\n'.code && !isWordBase(base)
+                }
+                if (!keep) break
+                i = start
+                taken = true
+            }
+            return end - i
+        }
+
+        private fun isWordBase(cp: Int): Boolean = Character.isLetterOrDigit(cp) || cp == '_'.code
+
+        private fun isConnector(cp: Int): Boolean = cp == '\''.code || cp == 0x2019 || cp == '-'.code || cp == 0x2010
+
+        /** Code points that belong to the character before them: marks, joiners, variation selectors, skin tones. */
+        private fun isExtender(cp: Int): Boolean = when (Character.getType(cp).toByte()) {
+            Character.NON_SPACING_MARK, Character.COMBINING_SPACING_MARK, Character.ENCLOSING_MARK -> true
+            else -> cp == 0x200D || cp in 0x1F3FB..0x1F3FF || cp in 0xE0020..0xE007F
+        }
+
+        /** Where the character ending at [end] starts, with its marks; joined emoji count as one. */
+        private fun clusterStart(text: String, end: Int): Int {
+            var j = end
+            while (j > 0) {
+                val cp = text.codePointBefore(j)
+                j -= Character.charCount(cp)
+                if (isExtender(cp)) continue
+                if (j > 0 && text.codePointBefore(j) == 0x200D) continue
+                break
+            }
+            return j
         }
 
         /**

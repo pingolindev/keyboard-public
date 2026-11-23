@@ -42,6 +42,9 @@ class FieldPolicyTest {
         assertFalse(FieldPolicy.mayLearn(text or InputType.TYPE_TEXT_VARIATION_PASSWORD, 0))
         assertFalse(FieldPolicy.mayLearn(number or InputType.TYPE_NUMBER_VARIATION_PASSWORD, 0))
         assertFalse(FieldPolicy.mayLearn(text, EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING))
+        // The user turned automatic incognito off: the app's request is ignored, passwords are not.
+        assertTrue(FieldPolicy.mayLearn(text, EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING, autoIncognito = false))
+        assertFalse(FieldPolicy.mayLearn(text or InputType.TYPE_TEXT_VARIATION_PASSWORD, 0, autoIncognito = false))
     }
 
     @Test

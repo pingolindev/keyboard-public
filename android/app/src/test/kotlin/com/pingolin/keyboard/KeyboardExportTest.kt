@@ -81,6 +81,14 @@ class KeyboardExportTest {
     }
 
     @Test
+    fun automaticIncognitoTravelsAndDefaultsToOn() {
+        val off = SettingsSnapshot(true, true, true, listOf("en-US"), "en-US", autoIncognito = false)
+        assertEquals(false, KeyboardExport.read(KeyboardExport.write(KeyboardExport.Contents(off, null)))!!.settings!!.autoIncognito)
+        val older = KeyboardExport.read("""{"format":"pingolin-keyboard-export","version":1,"settings":{"suggestions":true}}""")!!
+        assertEquals(true, older.settings!!.autoIncognito)
+    }
+
+    @Test
     fun pinnedClipsTravelInTheirOwnPart() {
         val clips = ClipboardHistory()
         clips.add("address")

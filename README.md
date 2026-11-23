@@ -6,7 +6,7 @@ at an early stage.
 - Suggestions, autocorrect and next-word predictions in 25 languages
 - Glide typing
 - Voice typing, done on the phone by whisper.cpp
-- Incognito mode, on by itself in private browser tabs
+- Incognito mode, on by itself where an app asks for it, such as private browser tabs
 - A text editing panel, and terminal keys for ssh
 - Clipboard history
 - Password manager suggestions (Android 11 and later)
