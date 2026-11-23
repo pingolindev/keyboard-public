@@ -1,0 +1,2 @@
+Number, phone and date fields get a number pad with large keys.
+Moving between the fields of a web page shows the right keys for each.

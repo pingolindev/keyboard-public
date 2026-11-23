@@ -5,6 +5,7 @@ package com.pingolin.keyboard
 
 import android.text.InputType
 import android.view.inputmethod.EditorInfo
+import com.pingolin.keyboard.engine.FieldKind
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -89,10 +90,11 @@ class FieldPolicyTest {
 
     @Test
     fun numbersPhonesAndDatesAreNumeric() {
-        assertTrue(FieldPolicy.isNumeric(number))
-        assertTrue(FieldPolicy.isNumeric(InputType.TYPE_CLASS_PHONE))
-        assertTrue(FieldPolicy.isNumeric(InputType.TYPE_CLASS_DATETIME))
-        assertFalse(FieldPolicy.isNumeric(text))
+        assertEquals(FieldKind.NUMBER, FieldPolicy.fieldKind(number))
+        assertEquals(FieldKind.NUMBER, FieldPolicy.fieldKind(number or InputType.TYPE_NUMBER_VARIATION_PASSWORD))
+        assertEquals(FieldKind.PHONE, FieldPolicy.fieldKind(InputType.TYPE_CLASS_PHONE))
+        assertEquals(FieldKind.DATE_TIME, FieldPolicy.fieldKind(InputType.TYPE_CLASS_DATETIME))
+        assertEquals(FieldKind.TEXT, FieldPolicy.fieldKind(text))
     }
 
     @Test

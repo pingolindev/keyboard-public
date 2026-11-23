@@ -25,8 +25,8 @@ pub use api::{
     PredictOptions, SuggestOptions, Suggester, Suggestions, Tap, UserModel, UserModelError,
 };
 pub use layout::{
-    EditCommand, Key, KeyAction, KeyboardLayout, ModifierKey, builtin_layout, builtin_layout_ids,
-    initial_layout_id, terminal_rows,
+    EditCommand, FieldKind, Key, KeyAction, KeyboardLayout, ModifierKey, builtin_layout,
+    builtin_layout_ids, initial_layout_id, terminal_rows,
 };
 pub use touch::{KeyCenter, Point};
 pub use voice::{VoiceError, VoiceModel, voice_available};

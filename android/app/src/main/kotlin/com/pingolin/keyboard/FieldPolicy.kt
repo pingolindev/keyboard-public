@@ -5,6 +5,7 @@ package com.pingolin.keyboard
 
 import android.text.InputType
 import android.view.inputmethod.EditorInfo
+import com.pingolin.keyboard.engine.FieldKind
 
 /**
  * What a text field allows, read from its EditorInfo values. Pure
@@ -74,10 +75,12 @@ object FieldPolicy {
     /** Fields that take raw key presses rather than text, as terminals do. */
     fun takesRawKeys(inputType: Int): Boolean = (inputType and InputType.TYPE_MASK_CLASS) == InputType.TYPE_NULL
 
-    /** Numbers, phone numbers, dates and times: the field starts on the symbols layout. */
-    fun isNumeric(inputType: Int): Boolean = when (inputType and InputType.TYPE_MASK_CLASS) {
-        InputType.TYPE_CLASS_NUMBER, InputType.TYPE_CLASS_PHONE, InputType.TYPE_CLASS_DATETIME -> true
-        else -> false
+    /** Numbers, phone numbers, dates and times get a number pad; the rest, the letters. */
+    fun fieldKind(inputType: Int): FieldKind = when (inputType and InputType.TYPE_MASK_CLASS) {
+        InputType.TYPE_CLASS_NUMBER -> FieldKind.NUMBER
+        InputType.TYPE_CLASS_PHONE -> FieldKind.PHONE
+        InputType.TYPE_CLASS_DATETIME -> FieldKind.DATE_TIME
+        else -> FieldKind.TEXT
     }
 
     /**

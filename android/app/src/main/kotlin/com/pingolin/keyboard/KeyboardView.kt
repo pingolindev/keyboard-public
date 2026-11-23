@@ -22,7 +22,6 @@ import com.pingolin.keyboard.engine.KeyAction
 import com.pingolin.keyboard.engine.KeyCenter
 import com.pingolin.keyboard.engine.KeyboardLayout
 import com.pingolin.keyboard.engine.ModifierKey
-import com.pingolin.keyboard.engine.initialLayoutId
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.min
@@ -408,9 +407,9 @@ class KeyboardView(
             }
             is KeyAction.SwitchLayout -> context.getString(
                 when (action.layoutId) {
-                    initialLayoutId(false) -> R.string.key_letters
-                    initialLayoutId(true) -> R.string.key_symbols
-                    else -> R.string.key_more_symbols
+                    LayoutIds.LETTERS -> R.string.key_letters
+                    LayoutIds.MORE_SYMBOLS -> R.string.key_more_symbols
+                    else -> R.string.key_symbols
                 },
             )
             is KeyAction.Edit -> withState(context.getString(editName(action.command)), action)
@@ -460,7 +459,8 @@ class KeyboardView(
 
     private fun labelFor(key: Key): String = when (val action = key.action) {
         is KeyAction.Text -> if (shift == ShiftState.OFF) key.label else upperCase(key.label, locale)
-        KeyAction.Space -> spaceLabel
+        // A small Space (the number pads) shows what it is rather than the language.
+        KeyAction.Space -> if (key.width >= LANGUAGE_SPACE) spaceLabel else "␣"
         KeyAction.Shift -> if (shift == ShiftState.LOCKED) "⇪" else "⇧"
         KeyAction.Backspace -> "⌫"
         KeyAction.Enter -> "⏎"
@@ -571,6 +571,9 @@ class KeyboardView(
         const val ROW_DP = 54f
         const val DEFAULT_ROWS = 4
         const val LONG_PRESS_MS = 450L
+
+        /** A Space at least this wide (in key units) names the language. */
+        const val LANGUAGE_SPACE = 4f
 
         /** How long a press stays on a key before its alternates show. */
         const val OFFER_PRESS_MS = 350L

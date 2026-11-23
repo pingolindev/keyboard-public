@@ -86,6 +86,9 @@ pub struct KeyboardLayout {
 const LETTERS: &str = "letters";
 const SYMBOLS: &str = "symbols";
 const MORE_SYMBOLS: &str = "more-symbols";
+const NUMBERS: &str = "numbers";
+const PHONE: &str = "phone";
+const DATE_TIME: &str = "date-time";
 const EDITING: &str = "editing";
 
 /// Letter layouts: their rows of letter keys, top to bottom. The bottom row
@@ -115,6 +118,9 @@ pub fn builtin_layout_ids() -> Vec<String> {
         .chain([
             SYMBOLS.to_owned(),
             MORE_SYMBOLS.to_owned(),
+            NUMBERS.to_owned(),
+            PHONE.to_owned(),
+            DATE_TIME.to_owned(),
             EDITING.to_owned(),
         ])
         .collect()
@@ -132,16 +138,85 @@ pub fn builtin_layout(id: String) -> Option<KeyboardLayout> {
     if id == EDITING {
         return Some(editing());
     }
+    match id.as_str() {
+        NUMBERS => return Some(pad(NUMBERS, ",", ".")),
+        PHONE => return Some(phone()),
+        DATE_TIME => return Some(pad(DATE_TIME, "/", ":")),
+        _ => {}
+    }
     LETTER_LAYOUTS
         .iter()
         .find(|(layout, _)| *layout == id)
         .map(|(layout, rows)| letters(layout, rows))
 }
 
-/// The layout a field starts with: symbols for numeric fields, letters otherwise.
+/// What a field takes, for the layout it starts with.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, uniffi::Enum)]
+pub enum FieldKind {
+    Text,
+    Number,
+    Phone,
+    DateTime,
+}
+
+/// The layout a field starts with: a number pad for numbers, phone numbers,
+/// dates and times, the letters otherwise.
 #[uniffi::export]
-pub fn initial_layout_id(numeric_field: bool) -> String {
-    if numeric_field { SYMBOLS } else { LETTERS }.to_owned()
+pub fn initial_layout_id(kind: FieldKind) -> String {
+    match kind {
+        FieldKind::Text => LETTERS,
+        FieldKind::Number => NUMBERS,
+        FieldKind::Phone => PHONE,
+        FieldKind::DateTime => DATE_TIME,
+    }
+    .to_owned()
+}
+
+/// A number pad: the digits as phones lay them out, 0 between `left` and
+/// `right`, and a column of -, Space, Delete and Enter. Keys are large: four
+/// to a row.
+fn pad(id: &str, left: &str, right: &str) -> KeyboardLayout {
+    let w = 2.5;
+    let digits = |ds: &str| {
+        ds.chars()
+            .map(|d| text_key(&d.to_string(), w))
+            .collect::<Vec<_>>()
+    };
+    let row = |ds: &str, last: Key| {
+        let mut r = digits(ds);
+        r.push(last);
+        r
+    };
+    KeyboardLayout {
+        id: id.to_owned(),
+        rows: vec![
+            row("123", text_key("-", w)),
+            row("456", key("", KeyAction::Space, w)),
+            row("789", key("", KeyAction::Backspace, w)),
+            vec![
+                text_key(left, w),
+                text_key("0", w),
+                text_key(right, w),
+                key("", KeyAction::Enter, w),
+            ],
+        ],
+    }
+}
+
+/// The phone pad: * and + beside 0; a long press gives # on * and the
+/// characters phone numbers are written with on -.
+fn phone() -> KeyboardLayout {
+    let mut layout = pad(PHONE, "*", "+");
+    for key in layout.rows.iter_mut().flatten() {
+        if let KeyAction::Text { text } = &key.action {
+            key.alternates = match text.as_str() {
+                "*" => vec!["#".to_owned()],
+                "-" => ["(", ")", "/", ".", ",", ";"].map(String::from).to_vec(),
+                _ => Vec::new(),
+            };
+        }
+    }
+    layout
 }
 
 fn key(label: &str, action: KeyAction, width: f32) -> Key {
@@ -699,8 +774,39 @@ mod tests {
     }
 
     #[test]
-    fn numeric_fields_start_on_symbols() {
-        assert_eq!(initial_layout_id(true), SYMBOLS);
-        assert_eq!(initial_layout_id(false), LETTERS);
+    fn numeric_fields_start_on_a_number_pad() {
+        assert_eq!(initial_layout_id(FieldKind::Text), LETTERS);
+        assert_eq!(initial_layout_id(FieldKind::Number), NUMBERS);
+        assert_eq!(initial_layout_id(FieldKind::Phone), PHONE);
+        assert_eq!(initial_layout_id(FieldKind::DateTime), DATE_TIME);
+    }
+
+    #[test]
+    fn number_pads_have_every_digit_once_and_the_keys_to_finish() {
+        for (id, also) in [(NUMBERS, ",.-"), (PHONE, "*+-"), (DATE_TIME, "/:-")] {
+            let layout = builtin_layout(id.to_owned()).unwrap();
+            let mut found = texts(id);
+            found.sort();
+            let mut wanted: Vec<String> =
+                ('0'..='9').chain(also.chars()).map(String::from).collect();
+            wanted.sort();
+            assert_eq!(found, wanted, "{id}");
+            let actions: Vec<&KeyAction> =
+                layout.rows.iter().flatten().map(|k| &k.action).collect();
+            for needed in [KeyAction::Space, KeyAction::Backspace, KeyAction::Enter] {
+                assert!(actions.contains(&&needed), "{id} lacks {needed:?}");
+            }
+            assert!(
+                layout.rows.iter().all(|r| r.len() == 4),
+                "{id}: four large keys a row"
+            );
+        }
+        let hash = builtin_layout(PHONE.to_owned())
+            .unwrap()
+            .rows
+            .iter()
+            .flatten()
+            .any(|k| k.alternates.contains(&"#".to_owned()));
+        assert!(hash, "# is a long press away on the phone pad");
     }
 }

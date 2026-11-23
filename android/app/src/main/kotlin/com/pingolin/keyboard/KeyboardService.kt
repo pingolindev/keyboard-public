@@ -27,6 +27,7 @@ import android.widget.LinearLayout
 import androidx.annotation.RequiresApi
 import androidx.core.graphics.ColorUtils
 import com.pingolin.keyboard.engine.EditCommand
+import com.pingolin.keyboard.engine.FieldKind
 import com.pingolin.keyboard.engine.KeyAction
 import com.pingolin.keyboard.engine.ModifierKey
 import com.pingolin.keyboard.engine.builtinLayoutFor
@@ -74,7 +75,10 @@ class KeyboardService : InputMethodService() {
 
     /** Select is on in the editing panel: moving keys extend the selection. */
     private var selecting = false
-    private var layoutId = initialLayoutId(false)
+    private var layoutId = LETTERS
+
+    /** What the field the keys last started on takes. */
+    private var fieldKind = FieldKind.TEXT
     private lateinit var settings: KeyboardSettings
     private lateinit var languages: Languages
     private lateinit var engine: Engine
@@ -221,12 +225,17 @@ class KeyboardService : InputMethodService() {
         val unlocked = isUnlocked()
         if (unlocked) clipboard.load(settings.keepClipboard)
         chooseLanguages(unlocked)
-        if (!restarting) {
+        // A browser moves between the fields of a page as a restart of one
+        // field: a field of another kind (a number after a name) still gets
+        // its own layout. The same kind keeps the layout the user is on.
+        val kind = FieldPolicy.fieldKind(info.inputType)
+        if (!restarting || kind != fieldKind) {
             shift.reset()
             ctrl.reset()
             alt.reset()
-            showLayout(initialLayoutId(FieldPolicy.isNumeric(info.inputType)))
+            showLayout(initialLayoutId(kind))
         }
+        fieldKind = kind
         val policy = policyFor(info, unlocked)
         logic.start(policy, info.initialSelStart, info.initialSelEnd)
         keyboard?.setGlideEnabled(settings.glideTyping && policy.compose)
@@ -282,7 +291,8 @@ class KeyboardService : InputMethodService() {
         settings.language = active.first().tag
         engine.configure(active.map { it.tag }, unlocked)
         currentInputEditorInfo?.let { logic.updatePolicy(policyFor(it, unlocked)) }
-        if (layoutId != SYMBOLS && layoutId != MORE_SYMBOLS) showLayout(LETTERS)
+        // The same layout again: letters change with the language, the others keep.
+        showLayout(layoutId)
     }
 
     /**
@@ -638,10 +648,8 @@ class KeyboardService : InputMethodService() {
         /** The strip's height (SuggestionStripView), and a password manager's chip in it. */
         const val STRIP_DP = 44
         const val CHIP_DP = 36
-        const val LETTERS = "letters"
-        const val SYMBOLS = "symbols"
-        const val MORE_SYMBOLS = "more-symbols"
-        const val EDITING = "editing"
+        const val LETTERS = LayoutIds.LETTERS
+        const val EDITING = LayoutIds.EDITING
     }
 }
 
