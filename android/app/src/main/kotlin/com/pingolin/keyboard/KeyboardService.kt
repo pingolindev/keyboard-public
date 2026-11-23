@@ -138,9 +138,18 @@ class KeyboardService : InputMethodService() {
             addView(clips)
             addView(speech)
         }
+        // Android sizes the window from the first measure and, after a
+        // rotation or a theme change, may not let it grow later: pad before
+        // that measure, or the bottom row ends up under the navigation bar.
+        container.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(v: View) {
+                v.rootWindowInsets?.let { padForBars(v, it) }
+            }
+
+            override fun onViewDetachedFromWindow(v: View) = Unit
+        })
         container.setOnApplyWindowInsetsListener { v, insets ->
-            val edges = keyEdges(insets)
-            v.setPadding(edges[0], 0, edges[1], edges[2])
+            padForBars(v, insets)
             insets
         }
         keyboard = keys
@@ -620,6 +629,15 @@ class KeyboardService : InputMethodService() {
         val connection = currentInputConnection
         if (info != null && connection != null) shift.onAutoCaps(connection.getCursorCapsMode(info.inputType) != 0)
         keyboard?.setShift(shift.state)
+    }
+
+    private fun padForBars(view: View, insets: WindowInsets) {
+        val (left, right, bottom) = keyEdges(insets)
+        if (view.paddingLeft == left && view.paddingRight == right && view.paddingBottom == bottom) return
+        view.setPadding(left, 0, right, bottom)
+        // Insets can arrive while Android lays out the window, and that pass
+        // keeps the old window height: ask for another pass after it.
+        view.post { view.requestLayout() }
     }
 
     /**
