@@ -30,7 +30,7 @@ import androidx.autofill.inline.v1.InlineSuggestionUi
  * hold. A tap on a chip goes to the service, which fills the field.
  */
 @SuppressLint("ViewConstructor") // only KeyboardService creates it, in code
-class AutofillBar(context: Context) : HorizontalScrollView(context) {
+class AutofillBar(context: Context, private val chipHeight: Int) : HorizontalScrollView(context) {
     private val density = resources.displayMetrics.density
     private val row = LinearLayout(context).apply {
         orientation = LinearLayout.HORIZONTAL
@@ -59,7 +59,9 @@ class AutofillBar(context: Context) : HorizontalScrollView(context) {
         }
         val views = arrayOfNulls<View>(suggestions.size)
         var waiting = suggestions.size
-        val size = Size(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        // Each chip comes back sized to what the password manager drew, at
+        // the height asked for in request().
+        val size = Size(ViewGroup.LayoutParams.WRAP_CONTENT, chipHeight)
         suggestions.forEachIndexed { i, suggestion ->
             suggestion.inflate(context, size, context.mainExecutor) { view ->
                 if (current != generation) return@inflate
@@ -68,7 +70,15 @@ class AutofillBar(context: Context) : HorizontalScrollView(context) {
                 val gap = (4 * density).toInt()
                 for (index in AutofillOrder.order(suggestions.map { it.info.isPinned })) {
                     val chip = views[index] ?: continue
-                    row.addView(chip, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { marginStart = gap })
+                    // Keep that size. Set to wrap its content, a chip takes all
+                    // the room it is offered: the first one filled the row and
+                    // pushed the keys off the screen.
+                    val drawn = chip.layoutParams
+                    val params = LinearLayout.LayoutParams(
+                        drawn?.width ?: ViewGroup.LayoutParams.WRAP_CONTENT,
+                        drawn?.height ?: chipHeight,
+                    )
+                    row.addView(chip, params.apply { marginStart = gap })
                 }
                 visibility = if (row.childCount > 0) VISIBLE else GONE
             }

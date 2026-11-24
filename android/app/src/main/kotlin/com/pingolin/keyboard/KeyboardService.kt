@@ -118,7 +118,7 @@ class KeyboardService : InputMethodService() {
     override fun onCreateInputView(): View {
         val keys = KeyboardView(this, ::onKey, engine::setKeys, ::nextLanguage, ::onGlide, ::deleteWord)
         val suggestions = SuggestionStripView(this, logic::onPick, ::onTool)
-        val passwords = AutofillBar(this)
+        val passwords = AutofillBar(this, chipHeight())
         // A password manager's chips cover the words, not the tools button.
         val stripArea = FrameLayout(this).apply {
             addView(suggestions)
@@ -133,7 +133,8 @@ class KeyboardService : InputMethodService() {
         val speech = VoicePanel(this, ::hideVoice, ::onVoiceAction)
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            addView(stripArea)
+            // Exactly the strip's height, whatever a password manager's chips ask for.
+            addView(stripArea, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, stripHeight()))
             addView(keys)
             addView(clips)
             addView(speech)
@@ -207,10 +208,12 @@ class KeyboardService : InputMethodService() {
 
     private fun stripHeight(): Int = (STRIP_DP * resources.displayMetrics.density).toInt()
 
+    private fun chipHeight(): Int = (CHIP_DP * resources.displayMetrics.density).toInt()
+
     /** Asks the password manager for suggestions shown in the strip (Android 11+). */
     @RequiresApi(Build.VERSION_CODES.R)
     override fun onCreateInlineSuggestionsRequest(uiExtras: Bundle): InlineSuggestionsRequest =
-        AutofillBar.request(this, (CHIP_DP * resources.displayMetrics.density).toInt(), resources.displayMetrics.widthPixels, theme())
+        AutofillBar.request(this, chipHeight(), resources.displayMetrics.widthPixels, theme())
 
     @RequiresApi(Build.VERSION_CODES.R)
     override fun onInlineSuggestionsResponse(response: InlineSuggestionsResponse): Boolean {
