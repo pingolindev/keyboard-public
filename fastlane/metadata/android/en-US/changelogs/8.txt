@@ -1,0 +1,2 @@
+Settings link to the privacy policy.
+The time and icons at the top of settings show in the light theme.

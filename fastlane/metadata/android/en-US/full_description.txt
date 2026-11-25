@@ -1,0 +1,13 @@
+Pingolin Keyboard is an open source keyboard with no internet access. It cannot send what you type anywhere.
+
+• Suggestions, autocorrect and next-word predictions in 23 languages
+• Glide typing
+• Voice typing on your phone, with a voice model you download once
+• Clipboard history, a text editing panel and terminal keys
+• Password manager suggestions above the keys, on Android 11 and later
+• Incognito mode, on by itself where an app asks for it
+• No account, ads or tracking
+
+English (US) is built in. Other languages and voice models are files you get in your browser and open with the keyboard.
+
+The source code, under the GPL, is at github.com/pingolindev/keyboard-public.

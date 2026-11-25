@@ -3,10 +3,10 @@
 A free and open source keyboard for Android, with no internet access. It is
 at an early stage.
 
-- Suggestions, autocorrect and next-word predictions in 25 languages
+- Suggestions, autocorrect and next-word predictions in 23 languages
 - Glide typing
 - Voice typing, done on the phone by whisper.cpp
-- Incognito mode, on by itself where an app asks for it, such as private browser tabs
+- Incognito mode, on by itself where an app asks for it
 - A text editing panel, and terminal keys for ssh
 - Clipboard history
 - Password manager suggestions (Android 11 and later)
@@ -22,7 +22,7 @@ Download the APK from the [releases page](https://github.com/pingolindev/keyboar
 
 - No internet permission. The build fails if one appears.
 - No backups of keyboard data, to the cloud or to a new phone.
-- No accounts, ads, payments or tracking.
+- No accounts, ads, payments or tracking. See the [privacy policy](PRIVACY.md).
 - Free software: anyone can read, build, change and share it.
 
 ## Building

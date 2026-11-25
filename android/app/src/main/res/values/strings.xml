@@ -58,7 +58,7 @@
     <string name="learning_title">Learning</string>
     <string name="setting_learn">Learn new words</string>
     <string name="setting_auto_incognito">Automatic incognito</string>
-    <string name="setting_auto_incognito_hint">In private tabs and apps that ask for it.</string>
+    <string name="setting_auto_incognito_hint">In apps that ask for it.</string>
     <string name="learned_forget">Forget learned words</string>
     <string name="learned_forget_confirm">Forget every word learned on this phone?</string>
     <string name="learned_forgotten">Learned words forgotten.</string>
@@ -69,6 +69,7 @@
     <string name="export_done">Exported.</string>
     <string name="import_done">Imported.</string>
     <string name="import_invalid">This is not a Pingolin Keyboard export.</string>
+    <string name="privacy_policy">Privacy policy</string>
     <string name="file_unreadable">The file could not be read.</string>
     <string name="file_unsaved">The file could not be saved.</string>
     <string name="file_not_keyboard">This is not a language file or a voice model.</string>

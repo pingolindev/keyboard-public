@@ -111,6 +111,9 @@ class SetupActivity : Activity() {
         findViewById<Button>(R.id.forget).setOnClickListener { confirmForget() }
         findViewById<Button>(R.id.export).setOnClickListener { chooseExport() }
         findViewById<Button>(R.id.import_file).setOnClickListener { pick(REQUEST_IMPORT) }
+        findViewById<Button>(R.id.privacy_policy).setOnClickListener {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PRIVACY_POLICY)))
+        }
         showLanguages()
     }
 
@@ -527,6 +530,9 @@ class SetupActivity : Activity() {
     private fun inputMethods(): InputMethodManager = getSystemService(InputMethodManager::class.java)
 
     companion object {
+        /** Google Play requires a link to it inside the app. */
+        private const val PRIVACY_POLICY = "https://github.com/pingolindev/keyboard-public/blob/main/PRIVACY.md"
+
         /** Set by the keyboard: ask for the microphone at once. */
         const val EXTRA_ASK_MIC = "com.pingolin.keyboard.ASK_MIC"
         private const val HEIGHT_STEP = 5

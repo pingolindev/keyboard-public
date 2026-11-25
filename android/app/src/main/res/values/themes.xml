@@ -5,6 +5,10 @@
     <style name="Theme.PingolinKeyboard" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:colorPrimary">@color/accent</item>
         <item name="android:colorAccent">@color/accent</item>
+        <!-- Dark icons, on the window's own color: Android 15 and later draw the
+             status bar over the window and ignore its color. -->
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:statusBarColor">?android:attr/colorBackground</item>
     </style>
 
     <!-- A file opened from the browser is being added. -->

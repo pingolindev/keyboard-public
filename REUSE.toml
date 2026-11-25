@@ -4,7 +4,7 @@ SPDX-PackageDownloadLocation = "https://github.com/pingolindev/keyboard-public"
 
 # Files that cannot carry a header. Outside core/ the app's license applies.
 [[annotations]]
-path = ["README.md", "CONTRIBUTING.md", "SECURITY.md", "REUSE.toml", ".gitignore", ".gitattributes", "docs/**", "fastlane/**"]
+path = ["README.md", "CONTRIBUTING.md", "SECURITY.md", "PRIVACY.md", "REUSE.toml", ".gitignore", ".gitattributes", "docs/**", "fastlane/**"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Pingolin LLC"
 SPDX-License-Identifier = "GPL-3.0-or-later"
