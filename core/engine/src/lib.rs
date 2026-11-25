@@ -11,6 +11,7 @@
 
 mod api;
 pub mod dictionary;
+pub mod emoji;
 pub mod glide;
 mod layout;
 pub mod suggest;
@@ -24,6 +25,7 @@ pub use api::{
     Candidate, CandidateKind, Dictionary, DictionaryError, GlideOptions, ImportSummary,
     PredictOptions, SuggestOptions, Suggester, Suggestions, Tap, UserModel, UserModelError,
 };
+pub use emoji::{Emoji, EmojiError, EmojiIndex};
 pub use layout::{
     EditCommand, FieldKind, Key, KeyAction, KeyboardLayout, ModifierKey, builtin_layout,
     builtin_layout_ids, initial_layout_id, terminal_rows,

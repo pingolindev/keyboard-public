@@ -182,7 +182,9 @@ class InputLogicTest {
     private val editor = FakeEditor()
     private val engine = FakeSuggester()
     private var strip = Strip.EMPTY
-    private val logic = InputLogic(editor, engine) { strip = it }.also { editor.logic = it }
+    /** The emoji words stand for: none unless a test says so. */
+    private val emoji = HashMap<String, String>()
+    private val logic = InputLogic(editor, engine, { emoji[it] }) { strip = it }.also { editor.logic = it }
     private val prose = InputPolicy(compose = true, autocorrect = true, personal = true, learn = true)
 
     private fun start(policy: InputPolicy = prose, existing: String = "", cursor: Int = existing.length) {
@@ -206,6 +208,11 @@ class InputLogicTest {
 
     private fun pick(slot: Slot?) {
         logic.onPick(slot!!)
+        editor.deliver()
+    }
+
+    private fun typeEmoji(text: String) {
+        logic.onEmoji(text)
         editor.deliver()
     }
 
@@ -688,6 +695,111 @@ class InputLogicTest {
         assertEquals("Hello", editor.toString())
         pick(strip.left)
         assertEquals("Help ", editor.toString().let { if (it.endsWith(" ")) it else "$it " })
+    }
+
+    @Test
+    fun anEmojiEndsTheWordWhichIsLearned() {
+        start()
+        type("how hello")
+        typeEmoji("😀")
+        assertEquals("how hello😀", editor.toString())
+        assertFalse(logic.isComposing)
+        assertEquals("hello" to WordContext("how", false), engine.learned.last())
+        // The next letters are a word of their own.
+        type("you")
+        assertEquals("how hello😀you", editor.toString())
+        assertEquals(11 to 14, editor.composeFrom to editor.composeTo)
+    }
+
+    @Test
+    fun anEmojiLeavesATypoAsTyped() {
+        start()
+        type("teh")
+        typeEmoji("😀")
+        assertEquals("teh😀", editor.toString())
+        assertTrue(engine.learned.isEmpty())
+    }
+
+    @Test
+    fun emojiInARowAfterASpace() {
+        start()
+        type("teh ")
+        typeEmoji("❤️")
+        typeEmoji("👍🏽")
+        assertEquals("the ❤️👍🏽", editor.toString())
+        assertEquals(Strip.EMPTY, strip)
+        type(" ")
+        assertEquals("the ❤️👍🏽 ", editor.toString())
+    }
+
+    @Test
+    fun anEmojiAfterAGlidedWordGetsASpace() {
+        start()
+        glide()
+        typeEmoji("😀")
+        assertEquals("hello 😀", editor.toString())
+    }
+
+    @Test
+    fun anEmojiInAPlainField() {
+        start(prose.copy(compose = false, autocorrect = false, personal = false, learn = false))
+        type("teh")
+        typeEmoji("😀")
+        assertEquals("teh😀", editor.toString())
+        assertTrue(engine.learned.isEmpty())
+    }
+
+    @Test
+    fun lettersAfterAnEmojiThatEndsInAMarkAreAWord() {
+        // ❤️ and 1️⃣ end in marks, which are not part of the word that follows.
+        for (text in listOf("❤️", "1️⃣", "👍🏽", "🏳️‍🌈")) {
+            editor.text.setLength(0)
+            start()
+            typeEmoji(text)
+            type("hello")
+            assertEquals("${text}hello", editor.toString())
+            assertEquals(text, text.length to text.length + 5, editor.composeFrom to editor.composeTo)
+            type(" ")
+            typeEmoji(text)
+            type(" how ")
+            assertEquals(text, "how" to WordContext.NONE, engine.learned.last())
+        }
+        assertEquals("", InputLogic.trailingWord("❤️"))
+        assertEquals("hi", InputLogic.trailingWord("❤️hi"))
+        assertEquals(WordContext.NONE, InputLogic.contextOf("❤️ "))
+    }
+
+    @Test
+    fun anEmojiInTheStripTakesTheWordsPlace() {
+        emoji["hello"] = "👋"
+        start()
+        type("how hello")
+        assertEquals(Slot("👋", Slot.Role.EMOJI), strip.right)
+        pick(strip.right)
+        assertEquals("how 👋 ", editor.toString())
+        assertFalse(logic.isComposing)
+        assertEquals(listOf("how"), engine.learned.map { it.first })
+        // Punctuation goes right after it.
+        type("!")
+        assertEquals("how 👋!", editor.toString())
+    }
+
+    @Test
+    fun theEmojiGoesWithTheAutocorrection() {
+        emoji["hello"] = "👋"
+        start()
+        type("helo")
+        assertEquals(listOf("helo", "hello", "👋"), words())
+        type(" ")
+        assertEquals("hello ", editor.toString())
+    }
+
+    @Test
+    fun aGlidedWordOffersItsEmoji() {
+        emoji["hello"] = "👋"
+        start()
+        glide()
+        assertEquals(listOf("help", "hello", "👋"), words())
     }
 
     @Test

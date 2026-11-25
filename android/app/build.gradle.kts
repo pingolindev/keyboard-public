@@ -4,6 +4,7 @@
 import com.android.build.api.artifact.SingleArtifact
 import keyboard.buildlogic.CargoNdkTask
 import keyboard.buildlogic.CompileDictionariesTask
+import keyboard.buildlogic.EmojiAssetsTask
 import keyboard.buildlogic.UniffiBindingsTask
 import keyboard.buildlogic.VerifyDependencyPolicyTask
 import keyboard.buildlogic.VerifyManifestPolicyTask
@@ -17,6 +18,8 @@ plugins {
 val coreDir: Directory = rootProject.layout.projectDirectory.dir("../core")
 // Word lists, compiled into the APK's assets by the engine's dictc.
 val wordListsDir: Directory = rootProject.layout.projectDirectory.dir("../dictionaries")
+// Emoji, their names and search words, made by ../emoji/build.py.
+val emojiTablesDir: Directory = rootProject.layout.projectDirectory.dir("../emoji")
 val engineCrate = "pingolin-keyboard-engine"
 val engineLibrary = "pingolin_keyboard_engine"
 val engineAbis = listOf("arm64-v8a", "armeabi-v7a", "x86_64")
@@ -40,8 +43,8 @@ android {
         applicationId = "com.pingolin.keyboard"
         minSdk = minSdkLevel
         targetSdk = 36
-        versionCode = 8
-        versionName = "0.1.7"
+        versionCode = 9
+        versionName = "0.2.0"
         ndk { abiFilters += engineAbis }
     }
 
@@ -135,8 +138,16 @@ val dictionaryAssets = tasks.register<CompileDictionariesTask>("compileDictionar
     packsDir.set(layout.buildDirectory.dir("outputs/languages"))
 }
 
+val emojiAssets = tasks.register<EmojiAssetsTask>("emojiAssets") {
+    description = "Copies the emoji tables into the assets."
+    tablesDir.set(emojiTablesDir)
+    license.set(rootProject.layout.projectDirectory.file("../LICENSES/Unicode-3.0.txt"))
+    outputDir.set(layout.buildDirectory.dir("generated/emoji/assets"))
+}
+
 androidComponents {
     onVariants { variant ->
+        variant.sources.assets?.addGeneratedSourceDirectory(emojiAssets, EmojiAssetsTask::outputDir)
         variant.sources.jniLibs?.addGeneratedSourceDirectory(engineJniLibs, CargoNdkTask::outputDir)
         variant.sources.kotlin?.addGeneratedSourceDirectory(engineBindings, UniffiBindingsTask::outputDir)
         variant.sources.assets?.addGeneratedSourceDirectory(dictionaryAssets, CompileDictionariesTask::outputDir)

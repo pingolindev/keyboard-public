@@ -29,6 +29,8 @@ pub enum KeyAction {
     Edit { command: EditCommand },
     /// Ctrl or Alt for the next key; a second tap in a row locks it.
     Modifier { key: ModifierKey },
+    /// Shows the emoji panel.
+    Emoji,
 }
 
 /// What an `Edit` key does.
@@ -345,8 +347,9 @@ fn bottom_row(switch_label: &str, switch_to: &str) -> Vec<Key> {
 fn bottom_row_with(switch_label: &str, switch_to: &str, left: &str, right: &str) -> Vec<Key> {
     vec![
         switch_key(switch_label, switch_to),
+        key("", KeyAction::Emoji, 1.0),
         text_key(left, 1.0),
-        key("", KeyAction::Space, 5.0),
+        key("", KeyAction::Space, 4.0),
         text_key(right, 1.0),
         key("", KeyAction::Enter, 1.5),
     ]
@@ -770,6 +773,31 @@ mod tests {
                 keys.contains(&KeyAction::Text { text: t.to_owned() }),
                 "{t}"
             );
+        }
+    }
+
+    #[test]
+    fn the_emoji_key_is_on_the_letters_and_the_symbol_pages() {
+        for id in [LETTERS, SYMBOLS, MORE_SYMBOLS] {
+            let layout = builtin_layout(id.to_owned()).unwrap();
+            let row = layout.rows.last().unwrap();
+            let emoji = row.iter().position(|k| k.action == KeyAction::Emoji);
+            let space = row.iter().position(|k| k.action == KeyAction::Space);
+            assert!(emoji.is_some() && emoji < space, "{id}");
+            assert!(
+                (row.iter().map(|k| k.width).sum::<f32>() - 10.0).abs() < 1e-4,
+                "{id}"
+            );
+        }
+        for id in builtin_layout_ids() {
+            let layout = builtin_layout(id.clone()).unwrap();
+            let count = layout
+                .rows
+                .iter()
+                .flatten()
+                .filter(|k| k.action == KeyAction::Emoji)
+                .count();
+            assert!(count <= 1, "{id}");
         }
     }
 

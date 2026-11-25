@@ -1,6 +1,6 @@
 # Pingolin Keyboard privacy policy
 
-Last changed: November 24, 2026
+Last changed: November 25, 2026
 
 Pingolin Keyboard is made by Pingolin LLC. It collects nothing and shares
 nothing. It has no internet permission, so it cannot send what you type
@@ -14,6 +14,8 @@ It keeps this on your phone:
 - **Copied text**, for up to an hour, or longer if you pin it or turn on "Keep
   clipboard history". Never from password fields, in incognito, or when an app
   marks it as sensitive. "Forget clipboard history" deletes it.
+- **Recent emoji**, and the skin tones you pick. Never from password fields or in
+  incognito. "Clear" in the emoji panel deletes the recent ones.
 - **Settings**, such as your languages and the apps with terminal keys, and the
   language files and voice models you add.
 

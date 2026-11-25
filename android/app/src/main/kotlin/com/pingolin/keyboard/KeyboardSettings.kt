@@ -27,6 +27,11 @@ class KeyboardSettings(context: Context) {
         get() = prefs.getBoolean(AUTO_SPACE, true)
         set(value) = prefs.edit().putBoolean(AUTO_SPACE, value).apply()
 
+    /** A typed word that names an emoji offers it in the strip. */
+    var suggestEmoji: Boolean
+        get() = prefs.getBoolean(SUGGEST_EMOJI, true)
+        set(value) = prefs.edit().putBoolean(SUGGEST_EMOJI, value).apply()
+
     /** Glide typing: sliding over the letters types a word. */
     var glideTyping: Boolean
         get() = prefs.getBoolean(GLIDE, true)
@@ -99,7 +104,7 @@ class KeyboardSettings(context: Context) {
         prefs.registerOnSharedPreferenceChangeListener(listener)
 
     /** What an export holds of these settings. */
-    fun snapshot() = SettingsSnapshot(suggestions, autocorrect, learnWords, languages, language, theme, heightPercent, autoIncognito, autoSpace)
+    fun snapshot() = SettingsSnapshot(suggestions, autocorrect, learnWords, languages, language, theme, heightPercent, autoIncognito, autoSpace, suggestEmoji)
 
     fun restore(s: SettingsSnapshot) {
         suggestions = s.suggestions
@@ -111,6 +116,7 @@ class KeyboardSettings(context: Context) {
         heightPercent = s.heightPercent
         autoIncognito = s.autoIncognito
         autoSpace = s.autoSpace
+        suggestEmoji = s.suggestEmoji
     }
 
     companion object {
@@ -120,6 +126,7 @@ class KeyboardSettings(context: Context) {
         const val HEIGHT = "height_percent"
         const val AUTO_INCOGNITO = "auto_incognito"
         const val AUTO_SPACE = "auto_space"
+        private const val SUGGEST_EMOJI = "suggest_emoji"
         private const val FILE = "settings"
         private const val SUGGESTIONS = "suggestions"
         private const val AUTOCORRECT = "autocorrect"
@@ -145,4 +152,5 @@ data class SettingsSnapshot(
     val heightPercent: Int = 100,
     val autoIncognito: Boolean = true,
     val autoSpace: Boolean = true,
+    val suggestEmoji: Boolean = true,
 )

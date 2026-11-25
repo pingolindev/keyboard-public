@@ -71,20 +71,25 @@ class SetupActivity : Activity() {
 
         val suggestions = findViewById<Switch>(R.id.suggestions)
         val autocorrect = findViewById<Switch>(R.id.autocorrect)
-        // Like autocorrect, it works with suggestions on.
+        // Like autocorrect, these work with suggestions on.
         val autoSpace = findViewById<Switch>(R.id.auto_space)
+        val suggestEmoji = findViewById<Switch>(R.id.suggest_emoji)
         suggestions.isChecked = settings.suggestions
         autocorrect.isChecked = settings.autocorrect
         autocorrect.isEnabled = settings.suggestions
         autoSpace.isChecked = settings.autoSpace
         autoSpace.isEnabled = settings.suggestions
+        suggestEmoji.isChecked = settings.suggestEmoji
+        suggestEmoji.isEnabled = settings.suggestions
         suggestions.setOnCheckedChangeListener { _, on ->
             settings.suggestions = on
             autocorrect.isEnabled = on
             autoSpace.isEnabled = on
+            suggestEmoji.isEnabled = on
         }
         autocorrect.setOnCheckedChangeListener { _, on -> settings.autocorrect = on }
         autoSpace.setOnCheckedChangeListener { _, on -> settings.autoSpace = on }
+        suggestEmoji.setOnCheckedChangeListener { _, on -> settings.suggestEmoji = on }
         findViewById<Switch>(R.id.glide).run {
             isChecked = settings.glideTyping
             setOnCheckedChangeListener { _, on -> settings.glideTyping = on }

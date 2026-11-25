@@ -17,6 +17,7 @@
     <string name="setting_autocorrect">Autocorrect</string>
     <string name="setting_auto_space">Space after punctuation</string>
     <string name="setting_glide">Glide typing</string>
+    <string name="setting_suggest_emoji">Suggest emoji</string>
 
     <string name="languages_title">Languages</string>
     <string name="languages_get">Get language files</string>
@@ -137,4 +138,29 @@
     <string name="key_letters">Letters</string>
     <string name="key_symbols">Symbols</string>
     <string name="key_more_symbols">More symbols</string>
+    <string name="key_emoji">Emoji</string>
+    <string name="emoji_search">Search emoji</string>
+    <string name="emoji_back">Back to emoji</string>
+    <string name="emoji_clear_search">Clear search</string>
+    <string name="emoji_no_match">No emoji found.</string>
+    <string name="emoji_clear_recent">Clear</string>
+    <string name="emoji_recent">Recent</string>
+    <string name="emoji_smileys">Smileys</string>
+    <string name="emoji_people">People</string>
+    <string name="emoji_animals">Animals and nature</string>
+    <string name="emoji_food">Food</string>
+    <string name="emoji_travel">Travel</string>
+    <string name="emoji_activities">Activities</string>
+    <string name="emoji_objects">Objects</string>
+    <string name="emoji_symbols">Symbols</string>
+    <string name="emoji_flags">Flags</string>
+    <string name="emoji_suggestion">Emoji %1$s</string>
+    <string name="emoji_tones">Skin tones</string>
+    <string name="emoji_tones_close">Close skin tones</string>
+    <string name="emoji_tone_light">Light skin tone</string>
+    <string name="emoji_tone_medium_light">Medium-light skin tone</string>
+    <string name="emoji_tone_medium">Medium skin tone</string>
+    <string name="emoji_tone_medium_dark">Medium-dark skin tone</string>
+    <string name="emoji_tone_dark">Dark skin tone</string>
+    <string name="emoji_with_tone">%1$s, %2$s</string>
 </resources>

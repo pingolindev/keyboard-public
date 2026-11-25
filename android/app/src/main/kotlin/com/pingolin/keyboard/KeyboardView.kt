@@ -69,6 +69,8 @@ class KeyboardView(
         strokeWidth = 5 * resources.displayMetrics.density
     }
     private val trail = Path()
+    private val emojiIcon = requireNotNull(context.getDrawable(R.drawable.ic_emoji)).mutate()
+    private var iconSize = ICON_DP * density
 
     /** Glide typing: a touch that starts on a letter and slides becomes a glide. */
     private var glideEnabled = false
@@ -152,6 +154,8 @@ class KeyboardView(
         rowHeight = ROW_DP * density * scale
         // Labels grow and shrink with the keys, within limits.
         val text = scale.coerceIn(0.85f, 1.15f)
+        iconSize = ICON_DP * density * text
+        emojiIcon.setTint(theme.label)
         for ((paint, sp) in listOf(labelPaint to 22f, spacePaint to 14f, wordPaint to 15f)) {
             paint.color = theme.label
             paint.textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sp * text, resources.displayMetrics)
@@ -264,6 +268,12 @@ class KeyboardView(
             if (label.isNotEmpty()) {
                 val baseline = rect.centerY() - (labelPaint.descent() + labelPaint.ascent()) / 2f
                 canvas.drawText(label, rect.centerX(), baseline, labelPaint)
+            }
+            if (key.action == KeyAction.Emoji) {
+                val left = (rect.centerX() - iconSize / 2).toInt()
+                val top = (rect.centerY() - iconSize / 2).toInt()
+                emojiIcon.setBounds(left, top, left + iconSize.toInt(), top + iconSize.toInt())
+                emojiIcon.draw(canvas)
             }
         }
         if (offers.isNotEmpty()) {
@@ -417,6 +427,7 @@ class KeyboardView(
                 context.getString(if (action.key == ModifierKey.CTRL) R.string.key_ctrl else R.string.key_alt),
                 action,
             )
+            KeyAction.Emoji -> context.getString(R.string.key_emoji)
         }
     }
 
@@ -467,6 +478,8 @@ class KeyboardView(
         is KeyAction.Edit -> editLabel(action.command)
         is KeyAction.Modifier -> context.getString(if (action.key == ModifierKey.CTRL) R.string.label_ctrl else R.string.label_alt)
         is KeyAction.SwitchLayout -> key.label
+        // Drawn as an icon.
+        KeyAction.Emoji -> ""
     }
 
     /** The press stayed on a key with alternates: they show over it, the likeliest picked. */
@@ -569,6 +582,9 @@ class KeyboardView(
 
         /** A row's height at 100%. */
         const val ROW_DP = 54f
+
+        /** An icon on a key, at 100%. */
+        const val ICON_DP = 24f
         const val DEFAULT_ROWS = 4
         const val LONG_PRESS_MS = 450L
 

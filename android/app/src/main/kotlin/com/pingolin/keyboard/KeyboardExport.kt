@@ -15,7 +15,8 @@ import org.json.JSONObject
  * {"format": "pingolin-keyboard-export", "version": 1,
  *  "settings": {"suggestions": true, "autocorrect": true, "learn_words": true,
  *               "languages": ["en-US", "de"], "language": "en-US",
- *               "theme": "system", "height": 100, "auto_incognito": true, "auto_space": true},
+ *               "theme": "system", "height": 100, "auto_incognito": true, "auto_space": true,
+ *               "suggest_emoji": true},
  *  "words": {"format": "pingolin-keyboard-words", "version": 1, "words": [], "pairs": []},
  *  "clipboard": {"format": "pingolin-keyboard-clipboard", "version": 1, "clips": []}}
  * ```
@@ -47,7 +48,8 @@ object KeyboardExport {
                     .put("theme", s.theme)
                     .put("height", s.heightPercent)
                     .put("auto_incognito", s.autoIncognito)
-                    .put("auto_space", s.autoSpace),
+                    .put("auto_space", s.autoSpace)
+                    .put("suggest_emoji", s.suggestEmoji),
             )
         }
         contents.wordsJson?.let { root.put("words", JSONObject(it)) }
@@ -75,6 +77,7 @@ object KeyboardExport {
                     heightPercent = s.optInt("height", 100).coerceIn(KeyboardSettings.MIN_HEIGHT, KeyboardSettings.MAX_HEIGHT),
                     autoIncognito = s.optBoolean("auto_incognito", true),
                     autoSpace = s.optBoolean("auto_space", true),
+                    suggestEmoji = s.optBoolean("suggest_emoji", true),
                 )
             }
             val words = root.optJSONObject("words")?.toString()

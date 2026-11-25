@@ -44,6 +44,14 @@ precedence = "closest"
 SPDX-FileCopyrightText = "Tatoeba contributors <https://tatoeba.org>"
 SPDX-License-Identifier = "LicenseRef-CC-BY-2.0-FR"
 
+# Emoji names and search words from Unicode CLDR, after each language's common
+# words from AOSP. The files carry these headers too (see above).
+[[annotations]]
+path = "emoji/names/*.tsv"
+precedence = "closest"
+SPDX-FileCopyrightText = ["2026 Unicode, Inc.", "The Android Open Source Project"]
+SPDX-License-Identifier = "Unicode-3.0 AND Apache-2.0"
+
 # whisper.cpp v1.9.5 and its ggml, vendored for offline voice typing
 # (core/engine/whisper/LICENSE). pk_voice.cpp is our own and says so itself.
 [[annotations]]

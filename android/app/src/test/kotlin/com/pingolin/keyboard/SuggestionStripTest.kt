@@ -55,6 +55,30 @@ class SuggestionStripTest {
     }
 
     @Test
+    fun anEmojiForTheMiddleWordTakesTheRightPlace() {
+        val emoji = { word: String -> if (word == "pizza") "🍕" else null }
+        val typed = Strip.arrange("pizza", result(null, "pizzas", "pizzeria", typed = "pizza"), emojiFor = emoji)
+        assertEquals(
+            listOf(Slot("pizzas", Slot.Role.SUGGESTION), Slot("pizza", Slot.Role.CURRENT), Slot("🍕", Slot.Role.EMOJI)),
+            typed.slots,
+        )
+        // It goes with the word a space would put there.
+        val corrected = Strip.arrange("piza", result("pizza", "pizza", "plaza", typed = "piza"), emojiFor = emoji)
+        assertEquals(
+            listOf(Slot("piza", Slot.Role.TYPED), Slot("pizza", Slot.Role.AUTOCORRECT), Slot("🍕", Slot.Role.EMOJI)),
+            corrected.slots,
+        )
+        // Not with a word that is only offered.
+        val offered = Strip.arrange("piz", result(null, "pizza", "pizzas", typed = "piz"), emojiFor = emoji)
+        assertEquals(listOf("pizza", "piz", "pizzas"), offered.slots.map { it?.text })
+        // Alone on its side.
+        assertEquals(
+            listOf(null, "pizza", "🍕"),
+            Strip.arrange("pizza", result(null, typed = "pizza"), emojiFor = emoji).slots.map { it?.text },
+        )
+    }
+
+    @Test
     fun nothingToShow() {
         assertEquals(Strip.EMPTY, Strip.arrange("", result("the")))
         assertEquals(Strip.EMPTY, Strip.arrange("teh", null))

@@ -43,6 +43,8 @@ data class InputPolicy(
 class InputLogic(
     private val field: TextField,
     private val suggester: WordSuggester,
+    /** The emoji a word stands for, if any. */
+    private val emojiFor: (String) -> String? = { null },
     private val onStrip: (Strip) -> Unit,
 ) {
     private var policy = InputPolicy.PLAIN
@@ -141,7 +143,7 @@ class InputLogic(
         afterCompose()
         val result = WordSuggestions(word, typedIsWord = true, autocorrect = null, candidates = words.drop(1))
         suggestions = result
-        onStrip(Strip.arrange(word, result, applyAutocorrect = false))
+        onStrip(Strip.arrange(word, result, applyAutocorrect = false, emojiFor = emojiFor))
     }
 
     private fun cased(word: String, shift: ShiftState): String = when (shift) {
@@ -173,6 +175,15 @@ class InputLogic(
         val spaced = if (before.isNullOrEmpty() || before.last().isWhitespace()) text else " $text"
         field.commitText(spaced)
         advance(spaced.length)
+        onStrip(Strip.EMPTY)
+    }
+
+    /** An emoji from the panel or its search: it ends the word being typed, as typed. */
+    fun onEmoji(text: String) = edit {
+        if (composing.isNotEmpty()) commitWord(if (glided) " " else "", autocorrect = false)
+        resetSpaces()
+        field.commitText(text)
+        advance(text.length)
         onStrip(Strip.EMPTY)
     }
 
@@ -322,7 +333,7 @@ class InputLogic(
         if (cursor != UNKNOWN && cursor >= count) moveTo(cursor - count) else cursor = UNKNOWN
     }
 
-    /** A word from the strip was tapped. */
+    /** A word or an emoji from the strip was tapped. */
     fun onPick(slot: Slot) = edit {
         if (composing.isEmpty()) {
             if (slot.role == Slot.Role.PREDICTION) pickPrediction(slot.text)
@@ -335,7 +346,11 @@ class InputLogic(
         field.commitText(slot.text + space)
         clearWord()
         if (start != UNKNOWN) moveTo(start + slot.text.length + space.length) else cursor = UNKNOWN
-        if (slot.role == Slot.Role.TYPED) keep(typed) else learn(slot.text, wordContext)
+        when (slot.role) {
+            Slot.Role.TYPED -> keep(typed)
+            Slot.Role.EMOJI -> Unit
+            else -> learn(slot.text, wordContext)
+        }
         undo = null
         weakSpace = space.isNotEmpty()
         autoSpaced = space.isNotEmpty()
@@ -539,7 +554,7 @@ class InputLogic(
         // applies them, and a word the engine would correct is not learned.
         val result = suggester.suggest(keys.toList(), !resumed, WordContext(context.previous, sentenceStart), policy.personal)
         suggestions = result
-        onStrip(Strip.arrange(composing.toString(), result, applyAutocorrect = policy.autocorrect && !resumed))
+        onStrip(Strip.arrange(composing.toString(), result, policy.autocorrect && !resumed, emojiFor))
     }
 
     private fun learn(word: String, wordContext: WordContext) {
@@ -607,8 +622,14 @@ class InputLogic(
         /** Characters read before the cursor for Delete held down; a longer word goes in parts. */
         private const val DELETE_LOOKBACK = 128
 
+        /** The marks that make an emoji of the character before: VS16 and the keycap. */
+        private const val EMOJI_STYLE = '\uFE0F'
+        private const val KEYCAP = '\u20E3'
+
+        /** A letter or a mark on one. The marks emoji end in (❤️, 1️⃣) are on no letter. */
         fun isWordChar(c: Char): Boolean = Character.isLetter(c) || when (Character.getType(c).toByte()) {
-            Character.NON_SPACING_MARK, Character.COMBINING_SPACING_MARK, Character.ENCLOSING_MARK -> true
+            Character.NON_SPACING_MARK, Character.COMBINING_SPACING_MARK, Character.ENCLOSING_MARK ->
+                c != EMOJI_STYLE && c != KEYCAP
             else -> false
         }
 

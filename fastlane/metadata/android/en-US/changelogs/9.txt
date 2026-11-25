@@ -1,0 +1,3 @@
+Emoji, with search and skin tones: tap the smiley next to the comma.
+The word you type can suggest its emoji. "Suggest emoji" in settings turns that off.
+The empty space under the keys on Android 14 and older is gone.

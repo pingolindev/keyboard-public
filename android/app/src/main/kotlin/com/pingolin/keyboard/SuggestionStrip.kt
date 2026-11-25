@@ -20,6 +20,9 @@ data class Slot(val text: String, val role: Role) {
 
         /** A word that may come next. */
         PREDICTION,
+
+        /** An emoji the word stands for: tapping puts it in the word's place. */
+        EMOJI,
     }
 }
 
@@ -33,15 +36,22 @@ data class Strip(val left: Slot?, val middle: Slot?, val right: Slot?) {
         /**
          * Lays out the suggestions for [typed]. With an autocorrection a space
          * will apply, the typed word goes left so it can be kept; otherwise the
-         * best two other words go to the sides.
+         * best two other words go to the sides. An emoji for the middle word
+         * takes the right place.
          */
-        fun arrange(typed: String, suggestions: WordSuggestions?, applyAutocorrect: Boolean = true): Strip {
+        fun arrange(
+            typed: String,
+            suggestions: WordSuggestions?,
+            applyAutocorrect: Boolean = true,
+            emojiFor: (String) -> String? = { null },
+        ): Strip {
             if (typed.isEmpty() || suggestions == null) return EMPTY
             val auto = suggestions.autocorrect?.takeIf { applyAutocorrect && it != typed }
             val middle = if (auto != null) Slot(auto, Slot.Role.AUTOCORRECT) else Slot(typed, Slot.Role.CURRENT)
             val others = suggestions.candidates.filter { it != typed && it != middle.text }.distinct().iterator()
             val left = if (auto != null) Slot(typed, Slot.Role.TYPED) else others.nextOrNull()?.let { Slot(it, Slot.Role.SUGGESTION) }
-            val right = others.nextOrNull()?.let { Slot(it, Slot.Role.SUGGESTION) }
+            val right = emojiFor(middle.text)?.let { Slot(it, Slot.Role.EMOJI) }
+                ?: others.nextOrNull()?.let { Slot(it, Slot.Role.SUGGESTION) }
             return Strip(left, middle, right)
         }
 

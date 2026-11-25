@@ -226,7 +226,8 @@ class SuggestionStripView(
             )
         }
         toolAt(id)?.let { return context.getString(it.label) }
-        return slotAt(id)?.let { display(it) } ?: ""
+        val slot = slotAt(id) ?: return ""
+        return if (slot.role == Slot.Role.EMOJI) context.getString(R.string.emoji_suggestion, slot.text) else display(slot)
     }
 
     private fun activate(id: Int) {

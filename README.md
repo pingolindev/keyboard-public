@@ -4,6 +4,7 @@ A free and open source keyboard for Android, with no internet access. It is
 at an early stage.
 
 - Suggestions, autocorrect and next-word predictions in 23 languages
+- Emoji, with search in 23 languages
 - Glide typing
 - Voice typing, done on the phone by whisper.cpp
 - Incognito mode, on by itself where an app asks for it
@@ -47,6 +48,7 @@ Then:
 - `core/`: the engine, in Rust, with no Android code in it
 - `dictionaries/`: word lists, one directory per language, built into the
   app at build time (see `dictionaries/README.md`)
+- `emoji/`: emoji names and search words, from Unicode
 - `scripts/`: the checks a release has to pass
 
 ## Licenses

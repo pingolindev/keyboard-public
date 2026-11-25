@@ -1,6 +1,7 @@
 Pingolin Keyboard is an open source keyboard with no internet access. It cannot send what you type anywhere.
 
 • Suggestions, autocorrect and next-word predictions in 23 languages
+• Emoji, with search in 23 languages
 • Glide typing
 • Voice typing on your phone, with a voice model you download once
 • Clipboard history, a text editing panel and terminal keys

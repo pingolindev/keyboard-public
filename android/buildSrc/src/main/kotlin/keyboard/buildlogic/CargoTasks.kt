@@ -8,9 +8,12 @@ import javax.inject.Inject
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
@@ -217,4 +220,29 @@ abstract class CompileDictionariesTask @Inject constructor(private val exec: Exe
 
     private fun sha256(file: File): String =
         java.security.MessageDigest.getInstance("SHA-256").digest(file.readBytes()).joinToString("") { "%02x".format(it) }
+}
+
+/** The emoji tables, as assets/emoji/list.tsv and assets/emoji/names/<tag>.tsv, with their license. */
+abstract class EmojiAssetsTask : DefaultTask() {
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val tablesDir: DirectoryProperty
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NAME_ONLY)
+    abstract val license: RegularFileProperty
+
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    @TaskAction
+    fun copy() {
+        val from = tablesDir.get().asFile
+        val into = File(outputDir.get().asFile.apply { deleteRecursively() }, "emoji")
+        val names = File(from, "names").listFiles { f -> f.name.endsWith(".tsv") }.orEmpty()
+        check(names.isNotEmpty()) { "no emoji names under $from" }
+        File(from, "list.tsv").copyTo(File(into, "list.tsv"))
+        names.forEach { it.copyTo(File(into, "names/${it.name}")) }
+        license.get().asFile.copyTo(File(into, "LICENSE.txt"))
+    }
 }

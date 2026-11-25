@@ -45,6 +45,12 @@ class KeyboardService : InputMethodService() {
     private var strip: SuggestionStripView? = null
     private var autofill: AutofillBar? = null
     private var inputArea: View? = null
+    private var stripArea: View? = null
+    private var emojiPanel: EmojiPanel? = null
+    private var emojiSearch: EmojiSearchBar? = null
+    private val emojiQuery = EmojiQuery()
+    private lateinit var emoji: EmojiData
+    private lateinit var emojiStore: EmojiStore
     private var clipPanel: ClipboardPanel? = null
     private var voicePanel: VoicePanel? = null
     private val voice = VoiceInput(object : VoiceInput.Listener {
@@ -103,24 +109,27 @@ class KeyboardService : InputMethodService() {
         clipboard = ClipboardStore.get(this)
         getSystemService(ClipboardManager::class.java)?.addPrimaryClipChangedListener(clipChanged)
         languages = Languages.get(this)
+        emoji = EmojiData.get(this)
+        emojiStore = EmojiStore.get(this)
         engine = Engine(this)
         val field = ConnectionTextField({ currentInputConnection }) { sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL) }
-        logic = InputLogic(field, engine) { strip?.show(it) }
+        logic = InputLogic(field, engine, ::emojiFor) { strip?.show(it) }
     }
 
     override fun onDestroy() {
         getSystemService(ClipboardManager::class.java)?.removePrimaryClipChangedListener(clipChanged)
         clipboard.save()
+        emojiStore.save()
         engine.save()
         super.onDestroy()
     }
 
     override fun onCreateInputView(): View {
         val keys = KeyboardView(this, ::onKey, engine::setKeys, ::nextLanguage, ::onGlide, ::deleteWord)
-        val suggestions = SuggestionStripView(this, logic::onPick, ::onTool)
+        val suggestions = SuggestionStripView(this, ::onPick, ::onTool)
         val passwords = AutofillBar(this, chipHeight())
         // A password manager's chips cover the words, not the tools button.
-        val stripArea = FrameLayout(this).apply {
+        val words = FrameLayout(this).apply {
             addView(suggestions)
             addView(
                 passwords,
@@ -131,24 +140,32 @@ class KeyboardService : InputMethodService() {
         }
         val clips = ClipboardPanel(this, ::paste, ::hideClipboard) { clipboard.save() }
         val speech = VoicePanel(this, ::hideVoice, ::onVoiceAction)
+        val allEmoji = EmojiPanel(this, emojiStore.recents, emojiActions)
+        val search = EmojiSearchBar(this, emojiStore.recents, emojiSearchActions)
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
+            addView(search)
             // Exactly the strip's height, whatever a password manager's chips ask for.
-            addView(stripArea, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, stripHeight()))
+            addView(words, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, stripHeight()))
             addView(keys)
             addView(clips)
             addView(speech)
+            addView(allEmoji)
         }
         // Android sizes the window from the first measure and, after a
         // rotation or a theme change, may not let it grow later: pad before
         // that measure, or the bottom row ends up under the navigation bar.
-        container.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
-            override fun onViewAttachedToWindow(v: View) {
-                v.rootWindowInsets?.let { padForBars(v, it) }
-            }
+        // Up to Android 14 the window already ends above the bar, and these
+        // insets still count it.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            container.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(v: View) {
+                    v.rootWindowInsets?.let { padForBars(v, it) }
+                }
 
-            override fun onViewDetachedFromWindow(v: View) = Unit
-        })
+                override fun onViewDetachedFromWindow(v: View) = Unit
+            })
+        }
         container.setOnApplyWindowInsetsListener { v, insets ->
             padForBars(v, insets)
             insets
@@ -156,6 +173,9 @@ class KeyboardService : InputMethodService() {
         keyboard = keys
         strip = suggestions
         autofill = passwords
+        stripArea = words
+        emojiPanel = allEmoji
+        emojiSearch = search
         clipPanel = clips
         voicePanel = speech
         inputArea = container
@@ -235,13 +255,19 @@ class KeyboardService : InputMethodService() {
         hideClipboard()
         hideVoice()
         val unlocked = isUnlocked()
-        if (unlocked) clipboard.load(settings.keepClipboard)
+        if (unlocked) {
+            clipboard.load(settings.keepClipboard)
+            emojiStore.load()
+        }
         chooseLanguages(unlocked)
+        if (settings.suggestions && settings.suggestEmoji) loadEmoji()
         // A browser moves between the fields of a page as a restart of one
         // field: a field of another kind (a number after a name) still gets
-        // its own layout. The same kind keeps the layout the user is on.
+        // its own layout. The same kind keeps the layout the user is on, and
+        // the emoji panel: some apps restart the field after every emoji.
         val kind = FieldPolicy.fieldKind(info.inputType)
         if (!restarting || kind != fieldKind) {
+            hideEmoji()
             shift.reset()
             ctrl.reset()
             alt.reset()
@@ -259,8 +285,10 @@ class KeyboardService : InputMethodService() {
     override fun onFinishInputView(finishingInput: Boolean) {
         autofill?.hide()
         hideVoice()
+        hideEmoji()
         logic.finish()
         engine.save()
+        emojiStore.save()
         super.onFinishInputView(finishingInput)
     }
 
@@ -305,6 +333,7 @@ class KeyboardService : InputMethodService() {
         currentInputEditorInfo?.let { logic.updatePolicy(policyFor(it, unlocked)) }
         // The same layout again: letters change with the language, the others keep.
         showLayout(layoutId)
+        if (searching || (settings.suggestions && settings.suggestEmoji)) loadEmoji { if (searching) updateSearch() }
     }
 
     /**
@@ -461,6 +490,7 @@ class KeyboardService : InputMethodService() {
     }
 
     private fun onKey(action: KeyAction, touch: PointF?) {
+        if (searching) return onSearchKey(action)
         strip?.closeTools()
         // Typing a letter means the password manager's chips are not wanted.
         if (action is KeyAction.Text) autofill?.hide()
@@ -489,19 +519,21 @@ class KeyboardService : InputMethodService() {
                 (if (action.key == ModifierKey.CTRL) ctrl else alt).tap(SystemClock.uptimeMillis())
                 showKeyStates()
             }
+            KeyAction.Emoji -> showEmoji()
         }
         // Automatic capitals follow in onUpdateSelection, once the field has
         // the edit. Not here: that would undo a Shift tap that cancels them.
-        keyboard?.setShift(shift.state)
+        showShift()
     }
 
     private fun onGlide(points: List<GlidePoint>) {
+        if (searching) return onSearchGlide(points)
         strip?.closeTools()
         autofill?.hide()
         val state = shift.state
         shift.onTyped()
         logic.onGlide(points, state)
-        keyboard?.setShift(shift.state)
+        showShift()
     }
 
     private fun enter() {
@@ -515,15 +547,158 @@ class KeyboardService : InputMethodService() {
         }
     }
 
-    /** Delete held down, a word at a time. With Ctrl or Alt on, the field gets the key instead. */
+    /**
+     * Delete held down, a word at a time. With Ctrl or Alt on, the field gets
+     * the key instead. In the emoji search, all of it goes.
+     */
     private fun deleteWord() {
-        if (ctrl.isOn || alt.isOn) {
+        if (searching) {
+            emojiQuery.clear()
+            updateSearch()
+        } else if (ctrl.isOn || alt.isOn) {
             onKey(KeyAction.Backspace, null)
         } else {
             strip?.closeTools()
             logic.onDeleteWord()
         }
     }
+
+    private fun onPick(slot: Slot) {
+        logic.onPick(slot)
+        if (slot.role == Slot.Role.EMOJI) emojiUsed(slot.text)
+    }
+
+    /** The emoji the strip offers for a typed word, in the skin tone last picked for it. */
+    private fun emojiFor(word: String): String? {
+        if (!settings.suggestEmoji) return null
+        return emoji.tables?.suggest(word)?.let(emojiStore.recents::variant)
+    }
+
+    private val emojiActions = object : EmojiPanel.Listener {
+        override fun onEmoji(text: String) = typeEmoji(text)
+
+        override fun onTone(base: String, tone: Int) {
+            if (remembersEmoji()) emojiStore.setTone(base, tone)
+        }
+
+        override fun onClearRecent() = emojiStore.clear()
+
+        override fun onSearch() = searchEmoji()
+
+        override fun onDelete() = logic.onBackspace()
+
+        override fun onLetters() = closeEmoji()
+    }
+
+    private val emojiSearchActions = object : EmojiSearchBar.Listener {
+        override fun onBack() = showEmoji()
+
+        override fun onEmoji(text: String) = typeEmoji(text)
+
+        override fun onClear() {
+            emojiQuery.clear()
+            updateSearch()
+        }
+    }
+
+    /** The keys type into the search over emoji. */
+    private val searching: Boolean get() = emojiSearch?.visibility == View.VISIBLE
+
+    private fun loadEmoji(onReady: (EmojiData.Tables) -> Unit = {}) = emoji.load(active.map { it.tag }, onReady)
+
+    /** Every emoji, in place of the strip and the keys. */
+    private fun showEmoji() {
+        val keys = keyboard ?: return
+        val panel = emojiPanel ?: return
+        hideClipboard()
+        hideVoice()
+        // Back from the search, the panel is as tall as it was.
+        val height = if (searching) panel.height else keys.height + stripHeight()
+        emojiSearch?.visibility = View.GONE
+        // What ABC goes back to.
+        showLayout(LETTERS)
+        panel.show(theme(), keys.width, height)
+        loadEmoji(panel::setTables)
+        stripArea?.visibility = View.GONE
+        keys.visibility = View.GONE
+    }
+
+    /** The search over emoji above the keys, which type into it. */
+    private fun searchEmoji() {
+        val keys = keyboard ?: return
+        val search = emojiSearch ?: return
+        emojiQuery.clear()
+        emojiPanel?.visibility = View.GONE
+        keys.visibility = View.VISIBLE
+        search.show(theme(), keys.width)
+        showLayout(LETTERS)
+        loadEmoji { if (searching) updateSearch() }
+    }
+
+    /** Back to typing: the strip and the keys. */
+    private fun closeEmoji() {
+        hideEmoji()
+        emojiStore.save()
+        currentInputEditorInfo?.let { logic.updatePolicy(policyFor(it, isUnlocked())) }
+        updateAutoCaps()
+    }
+
+    private fun hideEmoji() {
+        val open = searching || emojiPanel?.visibility == View.VISIBLE
+        if (!open) return
+        emojiPanel?.visibility = View.GONE
+        emojiSearch?.visibility = View.GONE
+        stripArea?.visibility = View.VISIBLE
+        keyboard?.visibility = View.VISIBLE
+        showLayout(LETTERS)
+    }
+
+    private fun updateSearch() {
+        val tables = emoji.tables
+        val cells = when {
+            tables == null -> emptyList()
+            emojiQuery.isEmpty -> tables.recent(emojiStore.recents)
+            else -> tables.search(emojiQuery.toString())
+        }
+        emojiSearch?.update(emojiQuery.toString(), cells)
+    }
+
+    private fun onSearchKey(action: KeyAction) {
+        when (action) {
+            is KeyAction.Text -> emojiQuery.type(action.text)
+            KeyAction.Space -> emojiQuery.type(" ")
+            KeyAction.Backspace -> emojiQuery.delete()
+            KeyAction.Enter -> {
+                // The best match; before anything is typed, back to the panel.
+                if (emojiQuery.isEmpty) return showEmoji()
+                val best = emoji.tables?.search(emojiQuery.toString())?.firstOrNull() ?: return
+                return typeEmoji(emojiStore.recents.shown(best))
+            }
+            is KeyAction.SwitchLayout -> return showLayout(action.layoutId)
+            KeyAction.Emoji -> return showEmoji()
+            KeyAction.Shift, is KeyAction.Edit, is KeyAction.Modifier -> return
+        }
+        updateSearch()
+    }
+
+    private fun onSearchGlide(points: List<GlidePoint>) {
+        val word = engine.glide(points, WordContext.NONE, personal = false).firstOrNull() ?: return
+        emojiQuery.type(" $word")
+        updateSearch()
+    }
+
+    private fun typeEmoji(text: String) {
+        logic.onEmoji(text)
+        emojiUsed(text)
+    }
+
+    private fun emojiUsed(text: String) {
+        if (remembersEmoji()) emojiStore.used(text)
+    }
+
+    /** Recent emoji are kept as words are learned: not in passwords, incognito or before the first unlock. */
+    private fun remembersEmoji(): Boolean =
+        currentInputEditorInfo?.let { policyFor(it, isUnlocked()).personal } ?: false
 
     /** An editing key: the word being typed stays as typed, then the key goes to the field. */
     private fun edit(command: EditCommand, modifiers: Int) {
@@ -620,18 +795,25 @@ class KeyboardService : InputMethodService() {
         }
         val rawKeys = currentInputEditorInfo?.let { FieldPolicy.takesRawKeys(it.inputType) } ?: false
         keyboard?.holdDeletesWords = !rawKeys
-        val terminal = id != EDITING && settings.terminalKeys(currentInputEditorInfo?.packageName)
+        val terminal = id != EDITING && !searching && settings.terminalKeys(currentInputEditorInfo?.packageName)
         val layout = if (terminal) base.copy(rows = terminalRows() + base.rows) else base
         val label = if (active.size > 1) language?.name.orEmpty() else ""
-        keyboard?.show(layout, shift.state, locale(), label)
+        keyboard?.show(layout, shownShift(), locale(), label)
         showKeyStates()
+    }
+
+    /** The search over emoji is typed in small letters. */
+    private fun shownShift(): ShiftState = if (searching) ShiftState.OFF else shift.state
+
+    private fun showShift() {
+        keyboard?.setShift(shownShift())
     }
 
     private fun updateAutoCaps() {
         val info = currentInputEditorInfo
         val connection = currentInputConnection
         if (info != null && connection != null) shift.onAutoCaps(connection.getCursorCapsMode(info.inputType) != 0)
-        keyboard?.setShift(shift.state)
+        showShift()
     }
 
     private fun padForBars(view: View, insets: WindowInsets) {

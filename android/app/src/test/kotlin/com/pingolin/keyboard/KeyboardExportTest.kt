@@ -81,14 +81,18 @@ class KeyboardExportTest {
     }
 
     @Test
-    fun automaticIncognitoTravelsAndDefaultsToOn() {
-        val off = SettingsSnapshot(true, true, true, listOf("en-US"), "en-US", autoIncognito = false, autoSpace = false)
+    fun laterSwitchesTravelAndDefaultToOn() {
+        val off = SettingsSnapshot(
+            true, true, true, listOf("en-US"), "en-US", autoIncognito = false, autoSpace = false, suggestEmoji = false,
+        )
         val back = KeyboardExport.read(KeyboardExport.write(KeyboardExport.Contents(off, null)))!!.settings!!
         assertEquals(false, back.autoIncognito)
         assertEquals(false, back.autoSpace)
+        assertEquals(false, back.suggestEmoji)
         val older = KeyboardExport.read("""{"format":"pingolin-keyboard-export","version":1,"settings":{"suggestions":true}}""")!!
         assertEquals(true, older.settings!!.autoIncognito)
         assertEquals(true, older.settings!!.autoSpace)
+        assertEquals(true, older.settings!!.suggestEmoji)
     }
 
     @Test
