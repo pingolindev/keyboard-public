@@ -1,0 +1,7 @@
+Copyright The Guava Authors, The JSpecify Authors
+
+Source code: https://github.com/google/guava, https://github.com/jspecify/jspecify
+
+com.google.guava:listenablefuture 1.0
+
+org.jspecify:jspecify 1.0.0

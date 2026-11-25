@@ -17,6 +17,12 @@ class FieldPolicyTest {
     private val number = InputType.TYPE_CLASS_NUMBER
 
     @Test
+    fun fieldsThatTakeOnlyAsciiSaySo() {
+        assertTrue(FieldPolicy.takesOnlyAscii(EditorInfo.IME_FLAG_FORCE_ASCII or EditorInfo.IME_ACTION_DONE))
+        assertFalse(FieldPolicy.takesOnlyAscii(EditorInfo.IME_ACTION_DONE))
+    }
+
+    @Test
     fun everyPasswordVariationIsAPassword() {
         for (variation in listOf(
             InputType.TYPE_TEXT_VARIATION_PASSWORD,

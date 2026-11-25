@@ -1,0 +1,5 @@
+The words of every language come from AOSP LatinIME, converted to the keyboard's own format.
+
+Copyright (c) 2008, The Android Open Source Project
+
+Source: https://android.googlesource.com/platform/packages/inputmethods/LatinIME

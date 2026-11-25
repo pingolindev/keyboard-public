@@ -49,6 +49,7 @@ Then:
 - `dictionaries/`: word lists, one directory per language, built into the
   app at build time (see `dictionaries/README.md`)
 - `emoji/`: emoji names and search words, from Unicode
+- `licenses/`: the pages of the app's Licenses screen
 - `scripts/`: the checks a release has to pass
 
 ## Licenses
@@ -56,7 +57,7 @@ Then:
 The Android app is GPL-3.0-or-later. The engine in `core/` is available under
 Apache-2.0 or MIT, so other keyboards can use it too. Every file states its
 license, following [REUSE](https://reuse.software), and the full texts are in
-`LICENSES/`.
+`LICENSES/`. Licenses in the app's settings lists everything it ships.
 
 ## Contributing
 

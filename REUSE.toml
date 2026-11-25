@@ -52,6 +52,49 @@ precedence = "closest"
 SPDX-FileCopyrightText = ["2026 Unicode, Inc.", "The Android Open Source Project"]
 SPDX-License-Identifier = "Unicode-3.0 AND Apache-2.0"
 
+# The Licenses screen's pages: notices of what the app ships.
+[[annotations]]
+path = "licenses/pingolin-keyboard.txt"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Pingolin LLC"
+SPDX-License-Identifier = "GPL-3.0-or-later"
+
+[[annotations]]
+path = ["licenses/whisper.txt", "licenses/libffi.txt"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "The authors named in the file"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = "licenses/uniffi.txt"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "The UniFFI contributors <https://github.com/mozilla/uniffi-rs>"
+SPDX-License-Identifier = "MPL-2.0"
+
+[[annotations]]
+path = ["licenses/rust.txt", "licenses/rust-std.txt"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "The authors named in the file"
+SPDX-License-Identifier = "Apache-2.0 AND MIT AND Unicode-3.0"
+
+[[annotations]]
+path = ["licenses/androidx.txt", "licenses/guava.txt", "licenses/jna.txt", "licenses/kotlin.txt", "licenses/word-lists.txt"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "The authors named in the file"
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = "licenses/word-pairs.txt"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Tatoeba contributors <https://tatoeba.org>"
+SPDX-License-Identifier = "LicenseRef-CC-BY-2.0-FR"
+
+[[annotations]]
+path = "licenses/emoji.txt"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Unicode, Inc."
+SPDX-License-Identifier = "Unicode-3.0"
+
 # whisper.cpp v1.9.5 and its ggml, vendored for offline voice typing
 # (core/engine/whisper/LICENSE). pk_voice.cpp is our own and says so itself.
 [[annotations]]

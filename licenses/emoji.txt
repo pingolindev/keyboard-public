@@ -1,0 +1,5 @@
+Emoji 18.0 and the emoji names and search words of CLDR 49, converted to the keyboard's own format. Each language's common words come from AOSP LatinIME, under the Apache License 2.0.
+
+Copyright © 2026 Unicode, Inc.
+
+Source: https://www.unicode.org/Public/18.0.0/emoji/ and https://github.com/unicode-org/cldr-json

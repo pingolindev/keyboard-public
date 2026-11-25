@@ -5,6 +5,7 @@ import com.android.build.api.artifact.SingleArtifact
 import keyboard.buildlogic.CargoNdkTask
 import keyboard.buildlogic.CompileDictionariesTask
 import keyboard.buildlogic.EmojiAssetsTask
+import keyboard.buildlogic.LicenseAssetsTask
 import keyboard.buildlogic.UniffiBindingsTask
 import keyboard.buildlogic.VerifyDependencyPolicyTask
 import keyboard.buildlogic.VerifyManifestPolicyTask
@@ -43,8 +44,8 @@ android {
         applicationId = "com.pingolin.keyboard"
         minSdk = minSdkLevel
         targetSdk = 36
-        versionCode = 9
-        versionName = "0.2.0"
+        versionCode = 10
+        versionName = "0.2.1"
         ndk { abiFilters += engineAbis }
     }
 
@@ -141,13 +142,20 @@ val dictionaryAssets = tasks.register<CompileDictionariesTask>("compileDictionar
 val emojiAssets = tasks.register<EmojiAssetsTask>("emojiAssets") {
     description = "Copies the emoji tables into the assets."
     tablesDir.set(emojiTablesDir)
-    license.set(rootProject.layout.projectDirectory.file("../LICENSES/Unicode-3.0.txt"))
     outputDir.set(layout.buildDirectory.dir("generated/emoji/assets"))
+}
+
+val licenseAssets = tasks.register<LicenseAssetsTask>("licenseAssets") {
+    description = "Copies the Licenses screen's pages into the assets."
+    pagesDir.set(rootProject.layout.projectDirectory.dir("../licenses"))
+    textsDir.set(rootProject.layout.projectDirectory.dir("../LICENSES"))
+    outputDir.set(layout.buildDirectory.dir("generated/licenses/assets"))
 }
 
 androidComponents {
     onVariants { variant ->
         variant.sources.assets?.addGeneratedSourceDirectory(emojiAssets, EmojiAssetsTask::outputDir)
+        variant.sources.assets?.addGeneratedSourceDirectory(licenseAssets, LicenseAssetsTask::outputDir)
         variant.sources.jniLibs?.addGeneratedSourceDirectory(engineJniLibs, CargoNdkTask::outputDir)
         variant.sources.kotlin?.addGeneratedSourceDirectory(engineBindings, UniffiBindingsTask::outputDir)
         variant.sources.assets?.addGeneratedSourceDirectory(dictionaryAssets, CompileDictionariesTask::outputDir)

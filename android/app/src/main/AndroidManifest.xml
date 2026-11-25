@@ -55,8 +55,16 @@
         </activity>
 
         <activity
+            android:name=".LicensesActivity"
+            android:exported="false"
+            android:label="@string/licenses" />
+
+        <!-- Up to Android 8.1 the field to try the keyboard in gets the focus by
+             itself, and the keyboard would cover the settings. -->
+        <activity
             android:name=".SetupActivity"
-            android:exported="true">
+            android:exported="true"
+            android:windowSoftInputMode="stateHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

@@ -119,6 +119,9 @@ class SetupActivity : Activity() {
         findViewById<Button>(R.id.privacy_policy).setOnClickListener {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PRIVACY_POLICY)))
         }
+        findViewById<Button>(R.id.licenses).setOnClickListener {
+            startActivity(Intent(this, LicensesActivity::class.java))
+        }
         showLanguages()
     }
 

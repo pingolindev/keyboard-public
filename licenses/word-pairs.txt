@@ -1,0 +1,3 @@
+The next words come from counting pairs of words in the sentences of Tatoeba, https://tatoeba.org, by its contributors.
+
+Licensed under CC BY 2.0 FR, https://creativecommons.org/licenses/by/2.0/fr/

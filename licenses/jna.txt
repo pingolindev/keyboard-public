@@ -1,0 +1,5 @@
+Copyright 1998 Sun Microsystems, Inc., 2007-2015 Timothy Wall, 2007 Wayne Meissner and JNA contributors
+
+Source code: https://github.com/java-native-access/jna
+
+net.java.dev.jna:jna 5.18.1

@@ -27,6 +27,9 @@ object FieldPolicy {
     /** The app asks for incognito here (a private browser tab, for one). */
     fun asksIncognito(imeOptions: Int): Boolean = (imeOptions and EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING) != 0
 
+    /** The app takes only ASCII here, as the lock screen's password does. */
+    fun takesOnlyAscii(imeOptions: Int): Boolean = (imeOptions and EditorInfo.IME_FLAG_FORCE_ASCII) != 0
+
     /**
      * Whether the keyboard may learn from what is typed here, and use what it
      * learned. Never in passwords; not where the app asks for incognito, unless

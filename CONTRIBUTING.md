@@ -25,9 +25,13 @@ A contribution is licensed under the license of the files it changes:
 - `dictionaries/`: each file keeps the license of its source, stated at the
   top of the file (word lists: Apache-2.0 from AOSP; word pairs: CC BY 2.0 FR
   from Tatoeba); our own text there is Apache-2.0 OR MIT
+- `emoji/`: the tables keep Unicode's license
 - everything else, including `android/`: GPL-3.0-or-later
 
 New files need SPDX headers like the existing ones. `reuse lint` checks them.
+
+After a dependency changes, build a release and run `licenses/build.py`, which
+updates the app's Licenses screen.
 
 ## Languages
 

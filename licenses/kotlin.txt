@@ -1,0 +1,15 @@
+Copyright JetBrains s.r.o. and Kotlin contributors
+
+Source code: https://github.com/JetBrains/kotlin, https://github.com/Kotlin/kotlinx.coroutines
+
+org.jetbrains.kotlin:kotlin-stdlib 2.3.10
+
+org.jetbrains.kotlinx:kotlinx-coroutines-android 1.8.1
+
+org.jetbrains.kotlinx:kotlinx-coroutines-bom 1.8.1
+
+org.jetbrains.kotlinx:kotlinx-coroutines-core 1.8.1
+
+org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm 1.8.1
+
+org.jetbrains:annotations 23.0.0

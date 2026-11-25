@@ -1,0 +1,2 @@
+Licenses in settings lists everything the app ships.
+With only Russian, Greek, Hebrew or Serbian on, hold Space for English letters. The lock screen's password starts with them.

@@ -31,6 +31,7 @@ import com.pingolin.keyboard.engine.FieldKind
 import com.pingolin.keyboard.engine.KeyAction
 import com.pingolin.keyboard.engine.ModifierKey
 import com.pingolin.keyboard.engine.builtinLayoutFor
+import com.pingolin.keyboard.engine.hasLatinLetters
 import com.pingolin.keyboard.engine.initialLayoutId
 import com.pingolin.keyboard.engine.terminalRows
 import java.util.Locale
@@ -259,7 +260,8 @@ class KeyboardService : InputMethodService() {
             clipboard.load(settings.keepClipboard)
             emojiStore.load()
         }
-        chooseLanguages(unlocked)
+        val before = active.firstOrNull()
+        chooseLanguages(unlocked, FieldPolicy.takesOnlyAscii(info.imeOptions))
         if (settings.suggestions && settings.suggestEmoji) loadEmoji()
         // A browser moves between the fields of a page as a restart of one
         // field: a field of another kind (a number after a name) still gets
@@ -272,6 +274,8 @@ class KeyboardService : InputMethodService() {
             ctrl.reset()
             alt.reset()
             showLayout(initialLayoutId(kind))
+        } else if (active.firstOrNull() != before) {
+            showLayout(layoutId)
         }
         fieldKind = kind
         val policy = policyFor(info, unlocked)
@@ -312,13 +316,14 @@ class KeyboardService : InputMethodService() {
 
     private fun isUnlocked(): Boolean = getSystemService(UserManager::class.java)?.isUserUnlocked ?: false
 
-    /** The enabled languages that can be used now (opened files need the phone unlocked). */
-    private fun chooseLanguages(unlocked: Boolean) {
+    /** The languages a field gets (opened files need the phone unlocked). */
+    private fun chooseLanguages(unlocked: Boolean, asciiOnly: Boolean) {
         val available = languages.available(unlocked).associateBy { it.tag }
         val enabled = settings.languages.mapNotNull { available[it] }
             .ifEmpty { listOfNotNull(available[Languages.FALLBACK] ?: available.values.firstOrNull()) }
-        val current = enabled.firstOrNull { it.tag == settings.language } ?: enabled.firstOrNull()
-        active = listOfNotNull(current) + enabled.filter { it != current }
+        active = LanguageChoice.order(enabled, available[Languages.FALLBACK], settings.language, asciiOnly) {
+            hasLatinLetters(it.layout)
+        }
         engine.configure(active.map { it.tag }, unlocked)
     }
 

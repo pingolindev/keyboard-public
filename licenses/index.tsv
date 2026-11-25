@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2026 Pingolin LLC
+# SPDX-License-Identifier: GPL-3.0-or-later
+# The Licenses screen: part, license, the files its page shows (here or in ../LICENSES).
+Pingolin Keyboard	GPL 3.0 or later	pingolin-keyboard.txt,GPL-3.0-or-later.txt
+whisper.cpp and ggml	MIT	whisper.txt
+UniFFI	MPL 2.0	uniffi.txt,MPL-2.0.txt
+Rust libraries	Apache 2.0, MIT, Unicode 3.0	rust.txt,Apache-2.0.txt
+Rust standard library	Apache 2.0, MIT, Unicode 3.0	rust-std.txt,Unicode-3.0.txt,Apache-2.0.txt
+JNA	Apache 2.0	jna.txt,Apache-2.0.txt
+libffi	MIT	libffi.txt
+AndroidX	Apache 2.0	androidx.txt,Apache-2.0.txt
+Kotlin	Apache 2.0	kotlin.txt,Apache-2.0.txt
+Guava and JSpecify	Apache 2.0	guava.txt,Apache-2.0.txt
+Word lists	Apache 2.0	word-lists.txt,Apache-2.0.txt
+Word pairs	CC BY 2.0 FR	word-pairs.txt,LicenseRef-CC-BY-2.0-FR.txt
+Emoji and their names	Unicode 3.0	emoji.txt,Unicode-3.0.txt

@@ -1,0 +1,7 @@
+uniffi 0.30.0
+
+uniffi_core 0.30.0
+
+uniffi_pipeline 0.30.0
+
+Source code: https://github.com/mozilla/uniffi-rs, tag v0.30.0

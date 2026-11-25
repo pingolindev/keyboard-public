@@ -339,6 +339,19 @@ pub fn builtin_layout_for(id: String, language: String) -> Option<KeyboardLayout
     Some(layout)
 }
 
+/// Whether a built-in layout has a key for each letter from a to z.
+#[uniffi::export]
+pub fn has_latin_letters(id: String) -> bool {
+    builtin_layout(id).is_some_and(|layout| {
+        ('a'..='z').all(|c| {
+            let action = KeyAction::Text {
+                text: c.to_string(),
+            };
+            layout.rows.iter().flatten().any(|k| k.action == action)
+        })
+    })
+}
+
 fn bottom_row(switch_label: &str, switch_to: &str) -> Vec<Key> {
     bottom_row_with(switch_label, switch_to, ",", ".")
 }
@@ -773,6 +786,20 @@ mod tests {
                 keys.contains(&KeyAction::Text { text: t.to_owned() }),
                 "{t}"
             );
+        }
+    }
+
+    #[test]
+    fn latin_letters() {
+        let mut without: Vec<&str> = LETTER_LAYOUTS
+            .iter()
+            .map(|(id, _)| *id)
+            .filter(|id| !has_latin_letters((*id).to_owned()))
+            .collect();
+        without.sort_unstable();
+        assert_eq!(without, ["greek", "hebrew", "russian", "serbian"]);
+        for id in [SYMBOLS, MORE_SYMBOLS, NUMBERS, "nonsense"] {
+            assert!(!has_latin_letters(id.to_owned()), "{id}");
         }
     }
 

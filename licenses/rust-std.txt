@@ -1,0 +1,33 @@
+The Rust standard library is available under the Apache License 2.0, at the end of this page, or the MIT license.
+
+Copyright The Rust Project Developers (see https://thanks.rust-lang.org), 2014 Alex Crichton, 2019 The Crossbeam Project Developers
+
+Source code: https://github.com/rust-lang/rust
+
+It is built with addr2line, adler2, cfg-if, gimli, hashbrown, libc, memchr, miniz_oxide, object and rustc-demangle. memchr is under the MIT license, the others are used under the Apache License 2.0. Copyright (c) 2015 Andrew Gallant (memchr)
+
+Its Unicode data is under the Unicode License v3. Copyright 1991-2024 Unicode, Inc.
+
+Its compiler-builtins are under the MIT license and the Apache License 2.0 with the LLVM exception. Copyright (c) 2009-2016 by the contributors listed in https://github.com/llvm/llvm-project/blob/main/compiler-rt/CREDITS.TXT
+
+Its libm is under the MIT license. Copyright (c) 2018 Jorge Aparicio, Copyright © 2005-2020 Rich Felker, et al. (musl libc), Copyright © 1993,2004 Sun Microsystems or Copyright © 2003-2011 David Schultz or Copyright © 2003-2009 Steven G. Kargl or Copyright © 2003-2009 Bruce D. Evans or Copyright © 2008 Stephen L. Moshier or Copyright © 2017-2018 Arm Limited
+
+MIT License
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

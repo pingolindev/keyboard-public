@@ -31,6 +31,9 @@ echo "== Android: build logic tests, lint, unit tests, rule gates, release build
     ./gradlew --console=plain :app:check :app:assembleRelease
 )
 
+echo "== The Licenses screen covers what a release ships"
+"$root/scripts/check-licenses.sh"
+
 echo "== No links to other Pingolin projects"
 "$root/scripts/check-isolation.sh" "$root"/android/app/build/outputs/apk/release/*.apk
 

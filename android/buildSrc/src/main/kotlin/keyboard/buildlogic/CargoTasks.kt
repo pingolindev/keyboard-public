@@ -8,12 +8,10 @@ import javax.inject.Inject
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
-import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
-import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
@@ -222,15 +220,11 @@ abstract class CompileDictionariesTask @Inject constructor(private val exec: Exe
         java.security.MessageDigest.getInstance("SHA-256").digest(file.readBytes()).joinToString("") { "%02x".format(it) }
 }
 
-/** The emoji tables, as assets/emoji/list.tsv and assets/emoji/names/<tag>.tsv, with their license. */
+/** The emoji tables, as assets/emoji/list.tsv and assets/emoji/names/<tag>.tsv. */
 abstract class EmojiAssetsTask : DefaultTask() {
     @get:InputDirectory
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val tablesDir: DirectoryProperty
-
-    @get:InputFile
-    @get:PathSensitive(PathSensitivity.NAME_ONLY)
-    abstract val license: RegularFileProperty
 
     @get:OutputDirectory
     abstract val outputDir: DirectoryProperty
@@ -243,6 +237,40 @@ abstract class EmojiAssetsTask : DefaultTask() {
         check(names.isNotEmpty()) { "no emoji names under $from" }
         File(from, "list.tsv").copyTo(File(into, "list.tsv"))
         names.forEach { it.copyTo(File(into, "names/${it.name}")) }
-        license.get().asFile.copyTo(File(into, "LICENSE.txt"))
+    }
+}
+
+/**
+ * The Licenses screen's pages, as assets/licenses/: index.tsv and every file it
+ * names, from [pagesDir] or else from [textsDir].
+ */
+abstract class LicenseAssetsTask : DefaultTask() {
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val pagesDir: DirectoryProperty
+
+    /** The license texts, named as REUSE names them. */
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val textsDir: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    @TaskAction
+    fun copy() {
+        val pages = pagesDir.get().asFile
+        val into = File(outputDir.get().asFile.apply { deleteRecursively() }, "licenses").apply { mkdirs() }
+        val index = File(pages, "index.tsv").copyTo(File(into, "index.tsv"))
+        val files = index.readLines().filterNot { it.startsWith("#") }.flatMap { line ->
+            val fields = line.split('\t')
+            check(fields.size == 3) { "${index.name}: not a name, a license and files: $line" }
+            fields[2].split(',')
+        }.toSortedSet()
+        check(files.isNotEmpty()) { "no license pages in $pages" }
+        for (name in files) {
+            val from = listOf(File(pages, name), File(textsDir.get().asFile, name)).firstOrNull { it.isFile }
+            checkNotNull(from) { "$name is in neither $pages nor ${textsDir.get().asFile}" }.copyTo(File(into, name))
+        }
     }
 }
