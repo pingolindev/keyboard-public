@@ -36,11 +36,14 @@ class EmojiSearchBar(
         fun onEmoji(text: String)
 
         fun onClear()
+
+        /** The query was touched at [offset]. */
+        fun onCursor(offset: Int)
     }
 
     private val density = resources.displayMetrics.density
     private val back = icon(R.drawable.ic_back, R.string.emoji_back) { listener.onBack() }
-    private val query = TextView(context).apply {
+    private val query = EmojiQueryView(context) { listener.onCursor(it) }.apply {
         setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
         gravity = Gravity.CENTER_VERTICAL
         setSingleLine()
@@ -93,10 +96,11 @@ class EmojiSearchBar(
             setColor(theme.key)
             cornerRadius = 8 * density
         }
+        query.setCaretColor(theme.accent)
         query.setTextColor(theme.label)
         query.setHintTextColor(ColorUtils.blendARGB(theme.label, theme.key, 0.3f))
         nothing.setTextColor(theme.label)
-        query.text = ""
+        query.show("", 0)
         nothing.visibility = GONE
         results.removeAllViews() // made for other colors
         val row = dp(EmojiCellView.SIZE_DP)
@@ -112,9 +116,15 @@ class EmojiSearchBar(
         visibility = VISIBLE
     }
 
-    /** What is [typed] so far, and the emoji to offer: what matches, or the recent ones before a search. */
-    fun update(typed: String, cells: List<EmojiCell>) {
-        query.text = typed
+    /** The cursor, where the next letter goes. */
+    fun setCursor(typed: String, cursor: Int) = query.show(typed, cursor)
+
+    /**
+     * What is [typed] so far, with the cursor, and the emoji to offer: what
+     * matches, or the recent ones before a search.
+     */
+    fun update(typed: String, cursor: Int, cells: List<EmojiCell>) {
+        query.show(typed, cursor)
         val none = typed.isNotBlank() && cells.isEmpty()
         nothing.visibility = if (none) VISIBLE else GONE
         scroll.visibility = if (none) GONE else VISIBLE

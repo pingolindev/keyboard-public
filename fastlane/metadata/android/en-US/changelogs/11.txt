@@ -1,0 +1,1 @@
+The emoji search has a cursor. Tap in the text to change it.

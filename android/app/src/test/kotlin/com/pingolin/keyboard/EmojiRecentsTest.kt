@@ -126,6 +126,65 @@ class EmojiRecentsTest {
     }
 
     @Test
+    fun theQueryIsEditedAtItsCursor() {
+        val query = EmojiQuery()
+        query.type("hart")
+        assertEquals(4, query.cursor)
+        query.moveTo(1)
+        query.type("e")
+        assertEquals("heart" to 2, query.toString() to query.cursor)
+        query.delete()
+        assertEquals("hart" to 1, query.toString() to query.cursor)
+        query.delete()
+        assertEquals("art" to 0, query.toString() to query.cursor)
+        query.delete()
+        assertEquals("art" to 0, query.toString() to query.cursor)
+        // Out of the text, the nearest end.
+        query.moveTo(99)
+        query.type("s")
+        assertEquals("arts" to 4, query.toString() to query.cursor)
+        query.moveTo(-3)
+        query.type("p")
+        assertEquals("parts" to 1, query.toString() to query.cursor)
+        query.clear()
+        assertEquals("" to 0, query.toString() to query.cursor)
+    }
+
+    @Test
+    fun theQueryHasNoSpacesTooMany() {
+        val query = EmojiQuery()
+        query.type("red heart")
+        query.moveTo(3)
+        query.type(" ")
+        // Over the space that is there, not a second one.
+        assertEquals("red heart" to 4, query.toString() to query.cursor)
+        query.type(" ")
+        assertEquals("red heart" to 4, query.toString() to query.cursor)
+        query.moveTo(3)
+        repeat(3) { query.delete() }
+        assertEquals("heart" to 0, query.toString() to query.cursor)
+        query.type(" ")
+        assertEquals("heart" to 0, query.toString() to query.cursor)
+        query.moveTo(2)
+        query.type(" ")
+        assertEquals("he art" to 3, query.toString() to query.cursor)
+    }
+
+    @Test
+    fun theCursorIsNeverInsideACharacter() {
+        val query = EmojiQuery()
+        query.type("a\uD835\uDC00e\u0301b")
+        query.moveTo(2)
+        assertEquals(3, query.cursor)
+        query.moveTo(4)
+        assertEquals(5, query.cursor)
+        query.delete()
+        assertEquals("a\uD835\uDC00b" to 3, query.toString() to query.cursor)
+        query.delete()
+        assertEquals("ab" to 1, query.toString() to query.cursor)
+    }
+
+    @Test
     fun theQueryHoldsWhatNamesAreMadeOf() {
         val query = EmojiQuery()
         assertTrue(query.isEmpty)

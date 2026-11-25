@@ -127,35 +127,62 @@ object EmojiRows {
     }
 }
 
-/** What is typed into the search over emoji. Pure, so it runs in plain JVM tests. */
+/** What is typed into the search over emoji, and where. Pure, so it runs in plain JVM tests. */
 class EmojiQuery {
     private val text = StringBuilder()
+
+    /** Where the next letter goes. */
+    var cursor = 0
+        private set
 
     override fun toString(): String = text.toString()
 
     val isEmpty: Boolean get() = text.isEmpty()
 
-    /** Types [s]. Only what names are made of counts: letters, digits, marks, spaces, apostrophes and hyphens. */
+    /**
+     * Types [s] at the cursor. Only what names are made of counts: letters,
+     * digits, marks, spaces, apostrophes and hyphens.
+     */
     fun type(s: String) {
         if (text.length + s.length > MAX) return
         s.codePoints().forEach { cp ->
-            val space = cp == ' '.code
-            // No space at the start, or after another.
-            if (space && (text.isEmpty() || text.last() == ' ')) return@forEach
-            if (space || isNamePart(cp)) text.appendCodePoint(cp)
+            when {
+                isNamePart(cp) -> insert(cp)
+                cp != ' '.code -> Unit
+                // No space at the start, or next to another.
+                cursor == 0 || text[cursor - 1] == ' ' -> Unit
+                cursor < text.length && text[cursor] == ' ' -> cursor++
+                else -> insert(cp)
+            }
         }
     }
 
-    /** Deletes the last character, with its marks. */
+    private fun insert(cp: Int) {
+        text.insert(cursor, String(Character.toChars(cp)))
+        cursor += Character.charCount(cp)
+    }
+
+    /** Deletes the character before the cursor, with its marks. */
     fun delete() {
-        while (text.isNotEmpty()) {
-            val cp = text.codePointBefore(text.length)
-            text.setLength(text.length - Character.charCount(cp))
-            if (!isMark(cp)) return
+        while (cursor > 0) {
+            val cp = text.codePointBefore(cursor)
+            text.delete(cursor - Character.charCount(cp), cursor)
+            cursor -= Character.charCount(cp)
+            if (!isMark(cp)) break
         }
+        if (cursor == 0 && text.startsWith(" ")) text.deleteCharAt(0)
     }
 
-    fun clear() = text.setLength(0)
+    /** Puts the cursor at [offset], or after the character [offset] is inside of. */
+    fun moveTo(offset: Int) {
+        cursor = offset.coerceIn(0, text.length)
+        while (cursor < text.length && (text[cursor].isLowSurrogate() || isMark(text.codePointAt(cursor)))) cursor++
+    }
+
+    fun clear() {
+        text.setLength(0)
+        cursor = 0
+    }
 
     private fun isNamePart(cp: Int): Boolean =
         Character.isLetterOrDigit(cp) || isMark(cp) || cp == '\''.code || cp == 0x2019 || cp == '-'.code

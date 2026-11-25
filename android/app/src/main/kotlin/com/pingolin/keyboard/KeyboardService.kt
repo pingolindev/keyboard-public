@@ -604,6 +604,11 @@ class KeyboardService : InputMethodService() {
             emojiQuery.clear()
             updateSearch()
         }
+
+        override fun onCursor(offset: Int) {
+            emojiQuery.moveTo(offset)
+            emojiSearch?.setCursor(emojiQuery.toString(), emojiQuery.cursor)
+        }
     }
 
     /** The keys type into the search over emoji. */
@@ -665,7 +670,7 @@ class KeyboardService : InputMethodService() {
             emojiQuery.isEmpty -> tables.recent(emojiStore.recents)
             else -> tables.search(emojiQuery.toString())
         }
-        emojiSearch?.update(emojiQuery.toString(), cells)
+        emojiSearch?.update(emojiQuery.toString(), emojiQuery.cursor, cells)
     }
 
     private fun onSearchKey(action: KeyAction) {
