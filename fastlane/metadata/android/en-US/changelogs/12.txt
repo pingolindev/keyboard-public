@@ -1,0 +1,2 @@
+Glide typing and suggestions also work in browser address bars and in fields that ask for no suggestions. Words typed there are not learned.
+Web pages that turn autocorrect off are not autocorrected.

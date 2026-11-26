@@ -15,7 +15,7 @@ data class InputPolicy(
      * user's), in passwords, or before the first unlock.
      */
     val personal: Boolean,
-    /** Learn the words typed here, on the phone: [personal] and the user's setting. */
+    /** Learn the words typed here, on the phone: [personal], the user's setting and the field allow it. */
     val learn: Boolean,
     /** Punctuation that belongs right after a word: the space before it goes. */
     val attaching: String = ".,!?:;",

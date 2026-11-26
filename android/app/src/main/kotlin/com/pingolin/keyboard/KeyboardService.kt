@@ -343,7 +343,8 @@ class KeyboardService : InputMethodService() {
 
     /**
      * No suggestions in passwords. In incognito (the field's or the user's)
-     * and before the first unlock, nothing is learned or used.
+     * and before the first unlock, nothing is learned or used. In web addresses
+     * and where the app asks for no suggestions, nothing is learned.
      */
     private fun policyFor(info: EditorInfo, unlocked: Boolean): InputPolicy {
         val compose = settings.suggestions && FieldPolicy.mayCompose(info.inputType)
@@ -353,7 +354,7 @@ class KeyboardService : InputMethodService() {
             autocorrect = compose && settings.autocorrect && FieldPolicy.mayAutocorrect(info.inputType),
             autoSpace = compose && settings.autoSpace && FieldPolicy.mayAutocorrect(info.inputType),
             personal = personal,
-            learn = personal && settings.learnWords,
+            learn = personal && settings.learnWords && FieldPolicy.mayLearnWords(info.inputType),
             attaching = if (locale().language == "fr") ".," else ".,!?:;",
         )
     }

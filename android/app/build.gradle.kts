@@ -44,8 +44,8 @@ android {
         applicationId = "com.pingolin.keyboard"
         minSdk = minSdkLevel
         targetSdk = 36
-        versionCode = 11
-        versionName = "0.2.2"
+        versionCode = 12
+        versionName = "0.2.3"
         ndk { abiFilters += engineAbis }
     }
 

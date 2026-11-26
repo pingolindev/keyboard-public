@@ -16,6 +16,14 @@ class FieldPolicyTest {
     private val text = InputType.TYPE_CLASS_TEXT
     private val number = InputType.TYPE_CLASS_NUMBER
 
+    // What Firefox 161 and Chrome send on Android 16.
+    private val firefoxAddressBar = 0x11
+    private val chromeAddressBar = 0x80011
+    private val chromeField = 0xc0a1
+    private val chromeFieldAutocompleteOff = 0x8c0a1
+    private val chromeFieldAutocorrectOff = 0x40a1
+    private val chromeEmail = 0xd1
+
     @Test
     fun fieldsThatTakeOnlyAsciiSaySo() {
         assertTrue(FieldPolicy.takesOnlyAscii(EditorInfo.IME_FLAG_FORCE_ASCII or EditorInfo.IME_ACTION_DONE))
@@ -55,21 +63,35 @@ class FieldPolicyTest {
     }
 
     @Test
-    fun suggestionsOnlyInTextFieldsThatAllowThem() {
-        assertTrue(FieldPolicy.maySuggest(text))
-        assertFalse(FieldPolicy.maySuggest(text or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS))
-        assertFalse(FieldPolicy.maySuggest(text or InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD))
-        assertFalse(FieldPolicy.maySuggest(number))
+    fun wordsAndGlideInEveryTextFieldButPasswordsAndEmailAddresses() {
+        assertTrue(FieldPolicy.mayCompose(text))
+        assertTrue(FieldPolicy.mayCompose(chromeField))
+        assertTrue(FieldPolicy.mayCompose(text or InputType.TYPE_TEXT_VARIATION_PERSON_NAME))
+        // Address bars, where searches are typed, and fields that ask for no suggestions.
+        assertTrue(FieldPolicy.mayCompose(firefoxAddressBar))
+        assertTrue(FieldPolicy.mayCompose(chromeAddressBar))
+        assertTrue(FieldPolicy.mayCompose(chromeFieldAutocompleteOff))
+        assertTrue(FieldPolicy.mayCompose(text or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS))
+        assertFalse(FieldPolicy.mayCompose(text or InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS))
+        assertFalse(FieldPolicy.mayCompose(chromeEmail))
+        assertFalse(FieldPolicy.mayCompose(text or InputType.TYPE_TEXT_VARIATION_PASSWORD))
+        assertFalse(FieldPolicy.mayCompose(text or InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD))
+        // Editors that turn suggestions off with a visible password keep them off.
+        assertFalse(
+            FieldPolicy.mayCompose(text or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS),
+        )
+        assertFalse(FieldPolicy.mayCompose(number))
+        assertFalse(FieldPolicy.mayCompose(InputType.TYPE_NULL))
     }
 
     @Test
-    fun addressesAreTypedWithoutSuggestions() {
-        assertTrue(FieldPolicy.mayCompose(text))
-        assertFalse(FieldPolicy.mayCompose(text or InputType.TYPE_TEXT_VARIATION_URI))
-        assertFalse(FieldPolicy.mayCompose(text or InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS))
-        assertFalse(FieldPolicy.mayCompose(text or InputType.TYPE_TEXT_VARIATION_WEB_EMAIL_ADDRESS))
-        assertFalse(FieldPolicy.mayCompose(text or InputType.TYPE_TEXT_VARIATION_PASSWORD))
-        assertTrue(FieldPolicy.mayCompose(text or InputType.TYPE_TEXT_VARIATION_PERSON_NAME))
+    fun noWordsLearnedInWebAddressesOrWhereTheAppAsksForNoSuggestions() {
+        assertTrue(FieldPolicy.mayLearnWords(text))
+        assertTrue(FieldPolicy.mayLearnWords(chromeField))
+        assertFalse(FieldPolicy.mayLearnWords(firefoxAddressBar))
+        assertFalse(FieldPolicy.mayLearnWords(chromeAddressBar))
+        assertFalse(FieldPolicy.mayLearnWords(chromeFieldAutocompleteOff))
+        assertFalse(FieldPolicy.mayLearnWords(text or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS))
     }
 
     @Test
@@ -87,7 +109,13 @@ class FieldPolicyTest {
                 text or InputType.TYPE_TEXT_VARIATION_PERSON_NAME or InputType.TYPE_TEXT_FLAG_AUTO_CORRECT,
             ),
         )
+        // Web fields follow the page: browsers ask for it unless the page turns it off.
+        assertTrue(FieldPolicy.mayAutocorrect(chromeField))
+        assertFalse(FieldPolicy.mayAutocorrect(chromeFieldAutocorrectOff))
         // Never in addresses, passwords or fields without suggestions.
+        assertFalse(FieldPolicy.mayAutocorrect(firefoxAddressBar))
+        assertFalse(FieldPolicy.mayAutocorrect(chromeAddressBar))
+        assertFalse(FieldPolicy.mayAutocorrect(chromeFieldAutocompleteOff))
         assertFalse(FieldPolicy.mayAutocorrect(text or InputType.TYPE_TEXT_VARIATION_URI or InputType.TYPE_TEXT_FLAG_AUTO_CORRECT))
         assertFalse(FieldPolicy.mayAutocorrect(text or InputType.TYPE_TEXT_VARIATION_PASSWORD))
         assertFalse(FieldPolicy.mayAutocorrect(text or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS))

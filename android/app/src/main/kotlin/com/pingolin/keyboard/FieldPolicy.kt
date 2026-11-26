@@ -38,15 +38,18 @@ object FieldPolicy {
     fun mayLearn(inputType: Int, imeOptions: Int, autoIncognito: Boolean = true): Boolean =
         !isPassword(inputType) && !(autoIncognito && asksIncognito(imeOptions))
 
-    /** Whether suggestions may be shown here. */
-    fun maySuggest(inputType: Int): Boolean =
-        (inputType and InputType.TYPE_MASK_CLASS) == InputType.TYPE_CLASS_TEXT &&
-            !isPassword(inputType) &&
-            (inputType and InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS) == 0
+    /** The app asks for no suggestions here. */
+    private fun asksNoSuggestions(inputType: Int): Boolean =
+        (inputType and InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS) != 0
 
-    /** Web and e-mail addresses: typed as they are, without suggestions. */
-    private val ADDRESSES = setOf(
-        InputType.TYPE_TEXT_VARIATION_URI,
+    private fun isText(inputType: Int): Boolean =
+        (inputType and InputType.TYPE_MASK_CLASS) == InputType.TYPE_CLASS_TEXT
+
+    private fun isWebAddress(inputType: Int): Boolean =
+        isText(inputType) && (inputType and InputType.TYPE_MASK_VARIATION) == InputType.TYPE_TEXT_VARIATION_URI
+
+    /** E-mail addresses: typed as they are, without suggestions. */
+    private val EMAIL_ADDRESSES = setOf(
         InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS,
         InputType.TYPE_TEXT_VARIATION_WEB_EMAIL_ADDRESS,
     )
@@ -57,20 +60,31 @@ object FieldPolicy {
         InputType.TYPE_TEXT_VARIATION_SHORT_MESSAGE,
         InputType.TYPE_TEXT_VARIATION_LONG_MESSAGE,
         InputType.TYPE_TEXT_VARIATION_EMAIL_SUBJECT,
-        InputType.TYPE_TEXT_VARIATION_WEB_EDIT_TEXT,
     )
 
-    /** Whether words are typed with the suggestion strip here. */
+    /**
+     * Whether words are typed with the suggestion strip and glide typing here:
+     * text fields other than passwords and e-mail addresses. That includes web
+     * addresses and fields that ask for no suggestions. Chrome asks that of its
+     * address bar, where searches are typed, and of every web field that turns
+     * autofill off. There words are offered, but not corrected or learned.
+     */
     fun mayCompose(inputType: Int): Boolean =
-        maySuggest(inputType) && (inputType and InputType.TYPE_MASK_VARIATION) !in ADDRESSES
+        isText(inputType) &&
+            !isPassword(inputType) &&
+            (inputType and InputType.TYPE_MASK_VARIATION) !in EMAIL_ADDRESSES
+
+    /** Whether words typed here may be learned: not in web addresses or where the app asks for no suggestions. */
+    fun mayLearnWords(inputType: Int): Boolean = !asksNoSuggestions(inputType) && !isWebAddress(inputType)
 
     /**
      * Whether a space may replace a typed word with a correction here. Prose
-     * fields, and fields that ask for it with TYPE_TEXT_FLAG_AUTO_CORRECT unless
-     * they hold an address.
+     * fields, and fields that ask for it with TYPE_TEXT_FLAG_AUTO_CORRECT, as
+     * browsers do unless the page turns autocorrect off. Never in web addresses
+     * or where the app asks for no suggestions.
      */
     fun mayAutocorrect(inputType: Int): Boolean {
-        if (!mayCompose(inputType)) return false
+        if (!mayCompose(inputType) || asksNoSuggestions(inputType) || isWebAddress(inputType)) return false
         val variation = inputType and InputType.TYPE_MASK_VARIATION
         return variation in PROSE || (inputType and InputType.TYPE_TEXT_FLAG_AUTO_CORRECT) != 0
     }

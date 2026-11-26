@@ -803,6 +803,19 @@ class InputLogicTest {
     }
 
     @Test
+    fun aFieldThatKeepsNoWordsStillGlides() {
+        // An address bar, or a field that asks for no suggestions.
+        start(prose.copy(autocorrect = false, learn = false))
+        glide()
+        assertEquals(listOf("help", "hello", "hell"), words())
+        type(" ")
+        glide()
+        type(" ")
+        assertEquals("hello hello ", editor.toString())
+        assertTrue(engine.learned.isEmpty())
+    }
+
+    @Test
     fun noGlideInPlainFields() {
         start(prose.copy(compose = false, autocorrect = false))
         glide()
