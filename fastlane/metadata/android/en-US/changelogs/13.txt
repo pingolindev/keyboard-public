@@ -1,0 +1,1 @@
+A space follows commas and periods again in note editors that turn autocorrect off, and also at the end of a line when more lines follow.

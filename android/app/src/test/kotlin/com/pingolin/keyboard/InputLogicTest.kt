@@ -967,6 +967,27 @@ class InputLogicTest {
     }
 
     @Test
+    fun punctuationAtTheEndOfALineGetsASpace() {
+        // More lines follow: the line break after the cursor is not a space.
+        start(spaced, existing = "hi\nnext", cursor = 2)
+        type(",")
+        assertEquals("hi, \nnext", editor.toString())
+        type("ok.")
+        assertEquals("hi, ok. \nnext", editor.toString())
+        logic.onEnter(isAction = false)
+        editor.deliver()
+        assertEquals("hi, ok.\nnext", editor.toString())
+    }
+
+    @Test
+    fun aPickedWordAtTheEndOfALineGetsASpace() {
+        start(spaced, existing = "\nnext", cursor = 0)
+        type("hel")
+        pick(strip.slots.first { it?.text == "hello" })
+        assertEquals("hello \nnext", editor.toString())
+    }
+
+    @Test
     fun punctuationAfterASpaceAttachesAndGetsTheSpaceBack() {
         start(spaced)
         type("hi ,")

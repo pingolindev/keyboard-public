@@ -89,6 +89,21 @@ object FieldPolicy {
         return variation in PROSE || (inputType and InputType.TYPE_TEXT_FLAG_AUTO_CORRECT) != 0
     }
 
+    /**
+     * Whether a space follows punctuation typed after a word: where autocorrect
+     * may work, and in multi-line web editors that ask for capitals at sentence
+     * starts. Editors built on CodeMirror turn autocorrect off unless the page
+     * turns it back on; one used for notes still asks for sentence capitals,
+     * while one used for code does not.
+     */
+    fun mayAutoSpace(inputType: Int): Boolean {
+        if (mayAutocorrect(inputType)) return true
+        if (!mayCompose(inputType) || asksNoSuggestions(inputType)) return false
+        return (inputType and InputType.TYPE_MASK_VARIATION) == InputType.TYPE_TEXT_VARIATION_WEB_EDIT_TEXT &&
+            (inputType and InputType.TYPE_TEXT_FLAG_MULTI_LINE) != 0 &&
+            (inputType and InputType.TYPE_TEXT_FLAG_CAP_SENTENCES) != 0
+    }
+
     /** Fields that take raw key presses rather than text, as terminals do. */
     fun takesRawKeys(inputType: Int): Boolean = (inputType and InputType.TYPE_MASK_CLASS) == InputType.TYPE_NULL
 

@@ -352,7 +352,7 @@ class KeyboardService : InputMethodService() {
         return InputPolicy(
             compose = compose,
             autocorrect = compose && settings.autocorrect && FieldPolicy.mayAutocorrect(info.inputType),
-            autoSpace = compose && settings.autoSpace && FieldPolicy.mayAutocorrect(info.inputType),
+            autoSpace = compose && settings.autoSpace && FieldPolicy.mayAutoSpace(info.inputType),
             personal = personal,
             learn = personal && settings.learnWords && FieldPolicy.mayLearnWords(info.inputType),
             attaching = if (locale().language == "fr") ".," else ".,!?:;",

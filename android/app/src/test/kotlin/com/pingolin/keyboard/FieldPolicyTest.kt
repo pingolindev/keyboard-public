@@ -24,6 +24,10 @@ class FieldPolicyTest {
     private val chromeFieldAutocorrectOff = 0x40a1
     private val chromeEmail = 0xd1
 
+    // A CodeMirror editor in a web view: as notes take it (autocapitalize="sentences"), and as code takes it.
+    private val notesEditor = 0x240a1
+    private val codeEditor = 0x200a1
+
     @Test
     fun fieldsThatTakeOnlyAsciiSaySo() {
         assertTrue(FieldPolicy.takesOnlyAscii(EditorInfo.IME_FLAG_FORCE_ASCII or EditorInfo.IME_ACTION_DONE))
@@ -120,6 +124,23 @@ class FieldPolicyTest {
         assertFalse(FieldPolicy.mayAutocorrect(text or InputType.TYPE_TEXT_VARIATION_PASSWORD))
         assertFalse(FieldPolicy.mayAutocorrect(text or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS))
         assertFalse(FieldPolicy.mayAutocorrect(number))
+    }
+
+    @Test
+    fun aSpaceFollowsPunctuationInProseEvenWithoutAutocorrect() {
+        assertTrue(FieldPolicy.mayAutoSpace(text))
+        assertTrue(FieldPolicy.mayAutoSpace(chromeField))
+        // A notes editor that turned autocorrect off still writes sentences.
+        assertFalse(FieldPolicy.mayAutocorrect(notesEditor))
+        assertTrue(FieldPolicy.mayAutoSpace(notesEditor))
+        // Code, a one-line field with autocorrect off, addresses, and fields without suggestions do not.
+        assertFalse(FieldPolicy.mayAutoSpace(codeEditor))
+        assertFalse(FieldPolicy.mayAutoSpace(chromeFieldAutocorrectOff))
+        assertFalse(FieldPolicy.mayAutoSpace(firefoxAddressBar))
+        assertFalse(FieldPolicy.mayAutoSpace(chromeAddressBar))
+        assertFalse(FieldPolicy.mayAutoSpace(chromeEmail))
+        assertFalse(FieldPolicy.mayAutoSpace(notesEditor or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS))
+        assertFalse(FieldPolicy.mayAutoSpace(text or InputType.TYPE_TEXT_VARIATION_PASSWORD))
     }
 
     @Test

@@ -569,8 +569,12 @@ class InputLogic(
         }
     }
 
-    /** A picked word gets a space before the next word, unless one follows already. */
-    private fun needsSpaceAfter(): Boolean = field.textAfterCursor(1)?.firstOrNull()?.isWhitespace() != true
+    /**
+     * A picked word, or punctuation after a word, gets a space before the next
+     * word, unless one follows already. A line break that follows is not one:
+     * the next word still goes on this line.
+     */
+    private fun needsSpaceAfter(): Boolean = field.textAfterCursor(1)?.firstOrNull().let { it != ' ' && it != '\u00A0' }
 
     private fun clearWord() {
         composing.setLength(0)
